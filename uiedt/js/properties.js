@@ -158,6 +158,15 @@ const Props = {
       body.appendChild(this.row("Color", this.select(COLORS, w.color || "line", (v) => { w.color = v; upd(); })));
     } else if (w.t === "wifi") {
       body.appendChild(this.row("Color", this.select(COLORS, w.color || "accenth", (v) => { w.color = v; upd(); })));
+    } else if (w.t === "decode") {
+      const info = document.createElement("div");
+      info.className = "empty";
+      info.textContent = T("디코드 패널: GPIO/모드/줄 수를 옵션 문자열로 지정합니다.");
+      body.appendChild(info);
+      body.appendChild(this.row("Options", this.input(w.text || "gpio=4;mode=0;lines=4",
+        (v) => { w.text = v; upd(); })));
+      body.appendChild(this.row("Color", this.select(COLORS, w.color || "accent",
+        (v) => { w.color = v; upd(); })));
     } else if (w.t === "menu") {
       const info = document.createElement("div");
       info.className = "empty";

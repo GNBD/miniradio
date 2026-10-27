@@ -569,8 +569,35 @@ static void draw_bandmap(const uc_widget_t *w, const ui_state_t *s)
 
 /* Wi-Fi 신호 막대 (4단계): 펌웨어 기본 표시와 동일 규칙 */
 /* 디코드 패널: 상태/레벨/텍스트 4줄 */
+static int opt_int(const char *s, const char *key, int def)
+{
+    if (!s) {
+        return def;
+    }
+    size_t kl = strlen(key);
+    const char *p = s;
+    while ((p = strstr(p, key)) != NULL) {
+        p += kl;
+        if (*p == '=') {
+            return atoi(p + 1);
+        }
+    }
+    return def;
+}
+
 static void draw_decode_panel(const uc_widget_t *w)
 {
+    /* 옵션 문자열: "gpio=4;mode=0;lines=4" (위젯 text 필드) */
+    int gpio = opt_int(w->text, "gpio", -1);
+    int mode = opt_int(w->text, "mode", -1);
+    int lines = opt_int(w->text, "lines", 0);
+    if (gpio >= 0) {
+        decode_set_gpio(gpio);
+    }
+    if (mode >= 0) {
+        decode_set_mode(mode);
+    }
+
     display_fill_round_rect(w->x, w->y, w->w, w->h, 8, col(UC_PANEL));
     display_draw_round_rect(w->x, w->y, w->w, w->h, 8, col(UC_LINE));
 
@@ -601,7 +628,9 @@ static void draw_decode_panel(const uc_widget_t *w)
 
     const char *txt = decode_text();
     int len = (int)strlen(txt);
-    int lines = (w->h - 30) / 13;
+    if (lines <= 0) {
+        lines = (w->h - 30) / 13;
+    }
     if (lines < 1) { lines = 1; }
     if (lines > 4) { lines = 4; }
     if (len == 0) {
