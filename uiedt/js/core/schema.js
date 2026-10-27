@@ -20,7 +20,7 @@
 
   const WIDGET_TYPES = [
     "rect", "text", "bar", "line", "freq", "rsq", "rds", "sig", "bandmap",
-    "menu", "wifi",
+    "menu", "wifi", "decode", "batt_icon",
   ];
 
   const COLORS = [
