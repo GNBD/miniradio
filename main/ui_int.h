@@ -53,6 +53,9 @@ extern int16_t  s_utc_min;
 extern int      s_cpu_mhz;
 extern uint32_t now_ms(void);
 extern uint16_t s_quick_mask;
+extern uint16_t s_sleep_min;
+extern uint32_t s_sleep_deadline;
+extern bool     s_sleep_armed;
 extern const char *const QA_LABELS[];
 
 /* ---- 공유 매크로 ---- */
@@ -96,7 +99,6 @@ void bar(int x, int y, int w, int h, int value, int max_value, uint16_t color);
 void wifi_icon(int x, int y, uint16_t color, int bars);
 void draw_status_right(const ui_state_t *s, int right);
 void draw_header_tabs(ui_tab_t tab, const ui_state_t *s);
-void draw_header_msg(const ui_state_t *s);
 void ui_fmt_freq(const ui_state_t *s, char *num, size_t n, const char **unit);
 void ui_fmt_step(const ui_state_t *s, char *buf, size_t n);
 
