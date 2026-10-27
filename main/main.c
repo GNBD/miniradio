@@ -624,7 +624,7 @@ void app_main(void)
             static uint32_t sleep_hdr_ms;
             if ((now - sleep_hdr_ms) >= 1000u) {
                 sleep_hdr_ms = now;
-                ui_draw_header(&s_ui);
+                draw_header_msg(&s_ui);
             }
         }
         seek_poll(now);
@@ -709,9 +709,7 @@ void app_main(void)
                     ui_draw_all(&s_ui);
                 } else if (s_hmi == HMI_MENU || s_hmi == HMI_SET ||
                            s_hmi == HMI_FAV || s_hmi == HMI_ATS_LIST) {
-                    /* 커스텀 UI는 패널 재그림 시 화면 전체를 다시 그리므로
-                       사이드 리스트까지 함께 복원해야 메뉴/설정이 유지된다. */
-                    redraw_overlay_page();
+                    ui_draw_radio_panel(&s_ui);
                 }
             }
         }

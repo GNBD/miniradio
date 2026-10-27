@@ -228,47 +228,37 @@ void draw_status_right(const ui_state_t *s, int right)
         int tw = display_text_width("ap", DISPLAY_FONT_TINY);
         display_draw_text((int16_t)(cursor - tw), 6, "ap", DISPLAY_FONT_TINY,
                           UI_WARN, UI_BG, DISPLAY_DATUM_TL);
-        cursor = cursor - tw - 6;
-    } else if (s_sta_connected && s->wifi_state == 2) {
+        return;
+    }
+    if (!s_sta_connected || s->wifi_state != 2) {
+        return;
+    }
+    uint16_t wc;
+    if (s->wifi_state == 0) {
+        wc = UI_MUTED;
+    } else if (s->wifi_state == 2) {
+        wc = UI_ACC_HI;
+    } else {
+        wc = UI_GOLD;
+    }
+    int bars = 0;
+    if (s->wifi_state == 1) {
+        bars = 4;
+    } else if (s->wifi_state == 2) {
         int r = s->wifi_rssi;
-        int bars = (r >= -55) ? 4 : (r >= -65) ? 3 : (r >= -75) ? 2 : 1;
-        const char *lbl = "sta";
-        int lw = display_text_width(lbl, DISPLAY_FONT_TINY);
-        int gx = cursor - (12 + 3 + lw);
-        if (gx < 0) {
-            gx = 0;
-        }
-        wifi_icon(gx, 5, UI_ACC_HI, bars);
+        bars = (r >= -55) ? 4 : (r >= -65) ? 3 : (r >= -75) ? 2 : 1;
+    }
+    const char *lbl = (s->wifi_state == 0) ? NULL
+                    : (s->wifi_state == 1) ? "ap" : "sta";
+    int lw = lbl ? display_text_width(lbl, DISPLAY_FONT_TINY) : 0;
+    int gx = cursor - (12 + (lbl ? 3 + lw : 0));
+    if (gx < 0) {
+        gx = 0;
+    }
+    wifi_icon(gx, 5, wc, bars);
+    if (lbl) {
         display_draw_text((int16_t)(gx + 15), 6, lbl, DISPLAY_FONT_TINY,
                           UI_MUTED, UI_BG, DISPLAY_DATUM_TL);
-        cursor = gx - 6;
-    }
-
-    /* Sleep 카운트다운: 상태표시(배터리/Wi-Fi) 왼쪽 = 헤더 최대 우측.
-       중앙 영역은 SEEK%/SEEK/SSB 알림용으로 비워 둔다. */
-    if (s_sleep_min > 0 && s_sleep_armed) {
-        char b[20];
-        int32_t remain = (int32_t)(s_sleep_deadline - now_ms());
-        if (remain < 0) {
-            remain = 0;
-        }
-        int sec = (int)((remain + 999) / 1000);
-        if (sec > 99 * 60 + 59) {
-            sec = 99 * 60 + 59;
-        }
-        snprintf(b, sizeof(b), "SLEEP %d:%02d", sec / 60, sec % 60);
-        int tw = display_text_width(b, DISPLAY_FONT_TINY);
-        int tx = cursor - tw;
-        if (tx < 0) {
-            tx = 0;
-        }
-        int fw = cursor - tx;
-        if (fw < tw) {
-            fw = tw;
-        }
-        display_fill_rect((int16_t)tx, 0, (uint16_t)fw, HDR_H - 1, UI_BG);
-        display_draw_text((int16_t)tx, 6, b, DISPLAY_FONT_TINY, UI_ACC, UI_BG,
-                          DISPLAY_DATUM_TL);
     }
 }
 
@@ -302,9 +292,23 @@ void draw_header_msg(const ui_state_t *s)
     const char *msg = NULL;
     uint16_t col = UI_MUTED;
     char seek_buf[20];
+    char sleep_buf[20];
     if (!s->radio_ok) {
         msg = "ERR";
         col = UI_WARN;
+    } else if (s_sleep_min > 0 && s_sleep_armed) {
+        int32_t remain = (int32_t)(s_sleep_deadline - now_ms());
+        if (remain < 0) {
+            remain = 0;
+        }
+        int sec = (int)((remain + 999) / 1000);
+        if (sec > 99 * 60 + 59) {
+            sec = 99 * 60 + 59;
+        }
+        snprintf(sleep_buf, sizeof(sleep_buf), "SLEEP %d:%02d",
+                 sec / 60, sec % 60);
+        msg = sleep_buf;
+        col = UI_ACC;
     } else if (s->seeking) {
         int pct = 0;
         if (s->sw_max > 0) {
