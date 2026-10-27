@@ -203,6 +203,10 @@ void ui_refresh_top(void)
 {
     switch (s_hmi) {
     case HMI_TUNE:
+    case HMI_SEEK:
+    case HMI_DECODE:
+    case HMI_FAV:
+    case HMI_ATS_LIST:
         ui_draw_header(&s_ui);
         break;
     case HMI_HOME:
@@ -233,6 +237,7 @@ void ui_refresh_top(void)
         wifi_app_draw();
         break;
     case HMI_WIFISCAN:
+    case HMI_SCANNING:
         scan_list_draw();
         break;
     case HMI_KEYPAD:
