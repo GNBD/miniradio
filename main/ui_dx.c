@@ -38,31 +38,6 @@ static char     s_eibi_name[96];
 
 
 
-void ui_draw_dx_signal3(const ui_state_t *s)
-{
-    display_fill_rect(8, 88, 304, 1, UI_LINE);
-
-    int rssi = s->have_rsq ? s->rsq.rssi : 0;
-    int snr = s->have_rsq ? s->rsq.snr : 0;
-    char v[12];
-
-    display_draw_text(12, 94, "RSSI", DISPLAY_FONT_SMALL, UI_MUTED, UI_BG,
-                      DISPLAY_DATUM_TL);
-    bar(56, 98, 196, 8, rssi, 63, UI_OK);
-    snprintf(v, sizeof(v), "%d", rssi);
-    display_fill_rect(286, 94, 28, 16, UI_BG);
-    display_draw_text(312, 94, v, DISPLAY_FONT_SMALL, UI_FG, UI_BG,
-                      DISPLAY_DATUM_TR);
-
-    display_draw_text(12, 114, "SNR", DISPLAY_FONT_SMALL, UI_MUTED, UI_BG,
-                      DISPLAY_DATUM_TL);
-    bar(56, 118, 196, 8, snr, 63, snr < 10 ? UI_WARN : UI_ACC);
-    snprintf(v, sizeof(v), "%d", snr);
-    display_fill_rect(286, 114, 28, 16, UI_BG);
-    display_draw_text(312, 114, v, DISPLAY_FONT_SMALL,
-                      snr < 10 ? UI_WARN : UI_FG, UI_BG, DISPLAY_DATUM_TR);
-}
-
 static void band_meta(const ui_state_t *s, char *buf, size_t n)
 {
     const char *bn = band_table[s->band_idx].name;
@@ -155,84 +130,6 @@ static void draw_freq_text(int x, int y, const char *num, display_font_t font,
     int dx = x + display_text_width(pre, font);
     char one[2] = { num[ci], '\0' };
     display_draw_text((int16_t)dx, (int16_t)y, one, font, UI_BLUE, bg,
-                      DISPLAY_DATUM_TL);
-}
-
-void ui_draw_all_dx3(const ui_state_t *s)
-{
-    s_radio_draw_seq++;
-    display_fill_screen(UI_BG);
-    draw_header_tabs(UI_TAB_RADIO, s);
-    draw_header_msg(s);
-
-    char num[20];
-    const char *unit = "";
-    ui_fmt_freq(s, num, sizeof(num), &unit);
-
-    char meta[48];
-    band_meta(s, meta, sizeof(meta));
-    display_draw_text(12, 24, meta, DISPLAY_FONT_SMALL, UI_MUTED, UI_BG,
-                      DISPLAY_DATUM_TL);
-
-    int bx = 312;
-    if (s->ats_slot >= 0) {
-        char a[16];
-        snprintf(a, sizeof(a), "A%d", s->ats_slot + 1);
-        pill(bx - 46, 24, a, 46, UI_BLACK, UI_GOLD);
-        bx -= 52;
-    }
-    if (s->preset_slot >= 0) {
-        char p[16];
-        snprintf(p, sizeof(p), "P%d", s->preset_slot + 1);
-        pill(bx - 46, 24, p, 46, UI_BLACK, UI_ACC);
-        bx -= 52;
-    }
-    if (s->patch_missing) {
-        pill(bx - 46, 24, "SSB!", 46, UI_WARN, UI_BG);
-    }
-
-    display_font_t ff = DISPLAY_FONT_HERO;
-    uint16_t fw = display_text_width(num, ff);
-    if (fw > 280) {
-        ff = DISPLAY_FONT_LARGE;
-        fw = display_text_width(num, ff);
-    }
-    draw_freq_text(12, 40, num, ff, UI_BG);
-    int fh = (ff == DISPLAY_FONT_HERO) ? 48 : 32;
-    display_draw_text((int16_t)(12 + fw + 5), (int16_t)(40 + fh / 3), unit,
-                      DISPLAY_FONT_SMALL, UI_MUTED, UI_BG,
-                      DISPLAY_DATUM_TL);
-
-    ui_draw_dx_signal3(s);
-
-    char stp[12];
-    ui_fmt_step(s, stp, sizeof(stp));
-    char l1[64];
-    snprintf(l1, sizeof(l1), "BW %s    STEP %s    AGC %s", ui_bw_label(s), stp,
-             s_agc_on ? "ON" : "OFF");
-    display_fill_rect(12, 134, 300, 16, UI_BG);
-    display_draw_text(12, 134, l1, DISPLAY_FONT_SMALL, UI_FG, UI_BG,
-                      DISPLAY_DATUM_TL);
-
-    char l2[64];
-    if (s->seeking && s->sw_max > 0) {
-        int pct = s->sw_steps * 100 / s->sw_max;
-        if (pct > 100) { pct = 100; }
-        snprintf(l2, sizeof(l2), "SEEK %d%%", pct);
-    } else {
-        int sq = ui_mode_slot(s->mode);
-        char sqv[20];
-        if (s_squelch_on) {
-            snprintf(sqv, sizeof(sqv), "%s %u",
-                     s_squelch_type[sq] ? "SNR" : "RSSI", s_squelch_thr[sq]);
-        } else {
-            snprintf(sqv, sizeof(sqv), "OFF");
-        }
-        snprintf(l2, sizeof(l2), "AVC %u    SQ %s%s", s_avc, sqv,
-                 s->stereo ? "    STEREO" : "");
-    }
-    display_fill_rect(12, 152, 300, 16, UI_BG);
-    display_draw_text(12, 152, l2, DISPLAY_FONT_SMALL, UI_MUTED, UI_BG,
                       DISPLAY_DATUM_TL);
 }
 
@@ -790,13 +687,6 @@ void ui_draw_all(const ui_state_t *s)
     s_radio_draw_seq++;
     ui_draw_all_adv4(s);
     return;
-    display_fill_screen(UI_BG);
-    draw_header_tabs(UI_TAB_RADIO, s);
-    draw_header_msg(s);
-    ui_draw_freq(s);
-    chip_row(s);
-    ui_draw_smeter(s);
-    ui_draw_rds(s);
 }
 
 void ui_draw_radio_freq(const ui_state_t *s)

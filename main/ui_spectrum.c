@@ -206,9 +206,7 @@ void ui_draw_decode(const ui_state_t *s)
 void ui_draw_hint(const ui_state_t *s, const char *toast)
 {
     if (!toast) {
-        display_fill_rect(0, SIG_Y, UI_W, UI_H - SIG_Y, UI_BG);
-        ui_draw_smeter(s);
-        ui_draw_rds(s);
+        ui_draw_adv_signal4b(s);
         return;
     }
     panel(60, 122, 200, 40, 16, UI_PANEL, UI_LINE);

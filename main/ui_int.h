@@ -99,8 +99,6 @@ void draw_header_tabs(ui_tab_t tab, const ui_state_t *s);
 void draw_header_msg(const ui_state_t *s);
 void ui_fmt_freq(const ui_state_t *s, char *num, size_t n, const char **unit);
 void ui_fmt_step(const ui_state_t *s, char *buf, size_t n);
-void chip_row(const ui_state_t *s);
-void ui_draw_all_dx3(const ui_state_t *s);
 
 #ifdef __cplusplus
 }

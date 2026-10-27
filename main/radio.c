@@ -281,12 +281,7 @@ static uint32_t s_seek_log_ms;
 
 static void seek_draw(void)
 {
-    if (s_hmi == HMI_TUNE || s_hmi == HMI_SEEK) {
-        ui_draw_all(&s_ui);
-    } else {
-        ui_draw_freq(&s_ui);
-        ui_draw_status(&s_ui);
-    }
+    ui_draw_all(&s_ui);
 }
 
 static esp_err_t seek_hw_start(bool up)
@@ -409,12 +404,7 @@ void seek_finish(bool found)
         mark_change();
         s_freq_dirty = true;
     }
-    if (s_hmi == HMI_TUNE) {
-        ui_draw_all(&s_ui);
-    } else {
-        ui_draw_freq(&s_ui);
-        ui_draw_status(&s_ui);
-    }
+    ui_draw_all(&s_ui);
     if (s_ats != ATS_SEEK) {
         toast(found ? "FOUND" : "NO STN");
     } else {
@@ -636,12 +626,7 @@ void ats_start(void)
     s_ui.sw_max = (int)((b->max_hz - b->min_hz) / s_ats_step) + 1;
     s_ats_timeout_ms = (uint32_t)s_ui.sw_max * 80 + 30000;
     s_ats_wait = now_ms() + 60;
-    if (s_hmi == HMI_TUNE) {
-        ui_draw_all(&s_ui);
-    } else {
-        ui_draw_freq(&s_ui);
-        ui_draw_status(&s_ui);
-    }
+    ui_draw_all(&s_ui);
     toast("ATS START");
 }
 

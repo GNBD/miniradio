@@ -166,15 +166,10 @@ void ui_init(void);
 void ui_theme_set(int theme);
 void ui_draw_all(const ui_state_t *s);        /* RADIO 페이지 전체 */
 void ui_draw_radio_freq(const ui_state_t *s); /* 모드별 주파수 갱신 */
-void ui_draw_dx_signal3(const ui_state_t *s);
 void ui_draw_adv_signal4(const ui_state_t *s);
 void ui_draw_adv_signal4b(const ui_state_t *s);
 void ui_draw_header(const ui_state_t *s);     /* RADIO 탭 헤더만 */
-void ui_draw_freq(const ui_state_t *s);
 void ui_draw_band_meta(const ui_state_t *s);
-void ui_draw_freq_saved(void);
-void ui_draw_smeter(const ui_state_t *s);
-void ui_draw_rds(const ui_state_t *s);
 void ui_draw_status(const ui_state_t *s);
 void ui_draw_volume(const ui_state_t *s, bool show);
 void ui_draw_loading(const char *msg);
