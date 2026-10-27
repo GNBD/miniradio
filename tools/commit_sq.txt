@@ -1,6 +1,0 @@
-fix(custom): SQ(스 ^{
-  " squelch) 값 반영 (변경 시 redraw + bar 값 지원)
-
-- SQUELCH 설정 변경 시 s_freq_dirty=true 트리거
-- num_bind에 UC_B_SQ 추가 (bar/숫자로 표시 가능)
-- 빌드 1.52MB, COM7 플래싱
