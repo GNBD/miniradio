@@ -307,7 +307,7 @@ const I18N = {
     });
     const btn = document.getElementById("langBtn");
     if (btn) {
-      btn.textContent = this.lang === "en" ? "한국어" : "EN";
+      btn.textContent = this.lang === "en" ? "KO" : "EN";
       btn.title = this.t("언어 변경");
     }
   },
