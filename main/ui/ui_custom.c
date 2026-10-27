@@ -588,21 +588,24 @@ static int opt_int(const char *s, const char *key, int def)
 /* 배터리 아이콘: 펌웨어 battery_pill 과 동일한 모양 */
 static void draw_batt_icon(const uc_widget_t *w, const ui_state_t *s)
 {
-    int pct = s->have_battery ? (int)s->battery.percent : 0;
-    uint16_t c = col(UC_OK);
-    if (pct <= 15) {
-        c = col(UC_WARN);
-    } else if (pct <= 35) {
-        c = col(UC_ACCENT);
+    int max = w->max ? (int)w->max : 100;
+    int val = num_bind(w->bind, s);
+    if (val < 0) { val = 0; }
+    if (val > max) { val = max; }
+
+    /* 사각 게이지: 테두리 + 채움 (단자는 text 에 noterm 이 없을 때만) */
+    display_fill_rect(w->x, w->y, w->w, w->h, col(UC_PANEL));
+    display_draw_rect(w->x, w->y, w->w, w->h, col(UC_LINE));
+    if (!(w->text && strstr(w->text, "noterm"))) {
+        display_fill_rect((int16_t)(w->x + w->w), (int16_t)(w->y + w->h / 3),
+                          2, (int16_t)(w->h / 3 > 0 ? w->h / 3 : 1),
+                          col(UC_LINE));
     }
-    display_fill_round_rect(w->x, w->y, 26, 11, 3, col(UC_PANEL));
-    display_draw_round_rect(w->x, w->y, 26, 11, 3, col(UC_LINE));
-    display_fill_rect((int16_t)(w->x + 26), (int16_t)(w->y + 3), 2, 5,
-                      col(UC_LINE));
-    int fill = (pct * 20) / 100;
-    if (fill > 0) {
-        display_fill_round_rect((int16_t)(w->x + 2), (int16_t)(w->y + 2),
-                                (uint16_t)fill, 7, 2, c);
+    int fill_w = (w->w - 2) * val / (max > 0 ? max : 1);
+    if (fill_w > 0) {
+        display_fill_rect((int16_t)(w->x + 1), (int16_t)(w->y + 1),
+                          (uint16_t)fill_w, (uint16_t)(w->h - 2),
+                          col(w->color));
     }
 }
 

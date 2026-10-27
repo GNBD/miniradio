@@ -189,16 +189,19 @@ const Render = {
         break;
       }
       case "batt_icon": {
-        const pct = Math.max(0, Math.min(100, Number(s.batt) || 0));
+        const max = wg.max || 100;
+        const val = Math.max(0, Math.min(max, Number(s[wg.bind]) || 0));
         ctx.fillStyle = c(wg.fill || "panel");
-        ctx.fillRect(wg.x, wg.y, 26, 11);
+        ctx.fillRect(wg.x, wg.y, wg.w, wg.h);
         ctx.strokeStyle = c(wg.stroke || "line");
-        ctx.strokeRect(wg.x + .5, wg.y + .5, 25, 10);
-        ctx.fillStyle = c(wg.stroke || "line");
-        ctx.fillRect(wg.x + 26, wg.y + 3, 2, 5);
-        ctx.fillStyle = pct <= 15 ? c("warn")
-                      : pct <= 35 ? c("accent") : c(wg.color || "ok");
-        ctx.fillRect(wg.x + 2, wg.y + 2, 20 * pct / 100, 7);
+        ctx.strokeRect(wg.x + .5, wg.y + .5, wg.w - 1, wg.h - 1);
+        if (!(wg.text && String(wg.text).indexOf("noterm") >= 0)) {
+          ctx.fillStyle = c(wg.stroke || "line");
+          ctx.fillRect(wg.x + wg.w, wg.y + Math.round(wg.h / 3), 2,
+                       Math.max(1, Math.round(wg.h / 3)));
+        }
+        ctx.fillStyle = c(wg.color || "ok");
+        ctx.fillRect(wg.x + 1, wg.y + 1, (wg.w - 2) * val / (max || 1), wg.h - 2);
         break;
       }
       case "decode": {

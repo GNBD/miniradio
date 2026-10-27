@@ -173,6 +173,15 @@ const Props = {
       body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "line", (v) => { RecentColors.add(v); w.color = v; upd(); })));
     } else if (w.t === "wifi") {
       body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "accenth", (v) => { RecentColors.add(v); w.color = v; upd(); })));
+    } else if (w.t === "batt_icon") {
+      body.appendChild(this.row("Bind", this.select(bindOptions(), w.bind || "batt",
+        (v) => { w.bind = v || undefined; upd(); })));
+      body.appendChild(this.row("Max", this.input(w.max || 100,
+        (v) => { w.max = +v; upd(); }, "number")));
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "ok",
+        (v) => { RecentColors.add(v); w.color = v; upd(); })));
+      body.appendChild(this.row("Options", this.input(w.text || "",
+        (v) => { w.text = v || undefined; upd(); })));
     } else if (w.t === "decode") {
       const info = document.createElement("div");
       info.className = "empty";
