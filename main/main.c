@@ -58,6 +58,7 @@
 #include "mod_runtime.h"
 #include "ui_runtime.h"
 #include "ui_exlu.h"
+#include "ui_lua.h"
 #include "decode.h"
 #include "weather.h"
 #include "hmi.h"
@@ -418,6 +419,15 @@ void app_main(void)
     ui_runtime_init(s_theme == UI_THEME_CUSTOM);
     if (s_theme == UI_THEME_CUSTOM && !ui_runtime_enabled()) {
         s_theme = 0;
+    }
+    {
+        /* Lua 런타임 자가 점검 (PSRAM 힙/샌드박스 확인) */
+        lua_State *L = lua_port_new();
+        if (L) {
+            const char *e = lua_port_exec(L, "return 1+1", 10, "=selftest");
+            ESP_LOGI(TAG, "lua selftest %s", e ? e : "ok");
+            lua_port_close(L);
+        }
     }
     rds_parser_reset(&s_rds);
 
