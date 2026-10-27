@@ -21,7 +21,7 @@ const MODULES = [
       W({ t: "text", x: 186, y: 6, w: 40, h: 10, bind: "wifi", size: "tiny", color: "muted", align: "l" }),
       W({ t: "text", x: 226, y: 6, w: 56, h: 10, bind: "battv", size: "tiny", color: "muted", align: "l" }),
       W({ t: "wifi", x: 166, y: 5, w: 18, h: 11, color: "accenth" }),
-      W({ t: "bar", x: 288, y: 7, w: 24, h: 8, bind: "batt", max: 100, color: "ok" }),
+      W({ t: "batt_icon", x: 292, y: 5, w: 26, h: 11, bind: "batt", max: 100, fill: "panel", stroke: "line", color: "ok" }),
       W({ t: "line", x: 0, y: 22, w: 320, h: 1, color: "panel" }),
     ] },
   { id: "bandfull", cat: "UI", name: "Band + Mode + ST", sub: "firmware meta row",
