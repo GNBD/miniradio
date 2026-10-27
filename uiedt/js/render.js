@@ -229,7 +229,7 @@ const Render = {
         break;
       }
       case "wifi": {
-        const bars = s.wifiBars == null ? 4 : s.wifiBars;
+        const bars = (wg.max != null) ? wg.max : (s.wifiBars == null ? 4 : s.wifiBars);
         if (bars <= 0) break;
         ctx.fillStyle = c(wg.color || "accenth");
         const bw = Math.max(2, Math.round(wg.w / 8));
