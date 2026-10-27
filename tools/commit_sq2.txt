@@ -1,0 +1,5 @@
+fix(custom): SQ value stuck at 0 - missing UC_B_SQ in num_bind
+
+- added UC_B_SQ case to num_bind (on/off + threshold)
+- slot index LSB=2, USB=3 to match mode_dsp_slot
+- build 1.52MB, COM7 flashed
