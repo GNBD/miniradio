@@ -122,7 +122,7 @@ static bool parse_text(const char *text, size_t len, uc_widget_t *out,
         for (int i = 0; i < nnum; ++i) {
             if (!parse_num(f[i], &v[i])) { free(buf); return false; }
         }
-        if (v[0] < 0 || v[0] > UC_WIFI) { free(buf); return false; }
+        if (v[0] < 0 || v[0] > UC_DECODE) { free(buf); return false; }
         if (v[1] < -32768 || v[1] > 32767 || v[2] < -32768 || v[2] > 32767) {
             free(buf); return false;
         }
@@ -134,7 +134,7 @@ static bool parse_text(const char *text, size_t len, uc_widget_t *out,
             v[8] < 0 || v[8] > UC_NONE) { free(buf); return false; }
         if (v[9] < 0 || v[9] > UC_LARGE) { free(buf); return false; }
         if (v[10] < 0 || v[10] > UC_AL_R) { free(buf); return false; }
-        if (v[11] < 0 || v[11] > UC_B_BATTV) { free(buf); return false; }
+        if (v[11] < 0 || v[11] > UC_B_DECODE_LEVEL) { free(buf); return false; }
         if (v[12] != 0 && v[12] != 1) { free(buf); return false; }
         if (v[13] < 0 || v[13] > 65535) { free(buf); return false; }
         int scale = 100;

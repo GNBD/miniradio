@@ -75,6 +75,9 @@ const MODULES = [
     make: () => [
       W({ t: "text", x: 228, y: 24, w: 84, h: 10, bind: "status", size: "tiny", color: "muted", align: "l" }),
     ] },
+  { id: "decode", cat: "APP", name: "DECODE panel", sub: "디코드 상태/레벨/텍스트",
+    colors: ["panel", "line", "accent", "ok", "fg", "muted"],
+    make: () => [ W({ t: "decode", x: 6, y: 72, w: 308, h: 96, fill: "panel", stroke: "line", color: "accent" }) ] },
   { id: "wifisig", cat: "BASIC", name: "Signal icon", sub: "4-bar wifi level · free placement",
     colors: ["accenth"],
     make: () => [ W({ t: "wifi", x: 286, y: 4, w: 20, h: 11, color: "accenth" }) ] },
@@ -130,6 +133,7 @@ const BINDINGS = [
   ["line1", "BW/ST"], ["line2", "BFO/AGC/SM"], ["line3", "AFC/AVC/SQ"],
   ["eibi", "EiBi 방송"], ["toast", "토스트"], ["wifi", "Wi-Fi 상태"],
   ["status", "VOL/BRT 상태"], ["battv", "배터리 전압"],
+  ["sleep", "Sleep 남은 초"], ["dec_level", "디코드 레벨 0-100"],
 ];
 
 const MOCK = {

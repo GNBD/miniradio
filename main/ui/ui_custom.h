@@ -22,7 +22,7 @@ extern "C" {
 typedef enum {
     UC_RECT = 0, UC_TEXT, UC_BAR, UC_LINE_W,
     UC_FREQ, UC_RSQ, UC_RDS, UC_SIG, UC_BANDMAP, UC_CUSTOM,
-    UC_MENU_GUIDE, UC_WIFI
+    UC_MENU_GUIDE, UC_WIFI, UC_DECODE
 } uc_type_t;
 
 typedef enum {
@@ -45,7 +45,7 @@ typedef enum {
     UC_B_PNAME, UC_B_ATS, UC_B_BATT, UC_B_VOL, UC_B_BW, UC_B_STEP,
     UC_B_BFO, UC_B_AGC, UC_B_SM, UC_B_AFC, UC_B_AVC, UC_B_SQ,
     UC_B_STEREO, UC_B_LINE1, UC_B_LINE2, UC_B_LINE3, UC_B_EIBI, UC_B_TOAST,
-    UC_B_WIFI, UC_B_STATUS, UC_B_BATTV
+    UC_B_WIFI, UC_B_STATUS, UC_B_BATTV, UC_B_SLEEP, UC_B_DECODE_LEVEL
 } uc_bind_t;
 
 typedef struct {

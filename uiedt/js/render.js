@@ -188,6 +188,33 @@ const Render = {
         }
         break;
       }
+      case "decode": {
+        const c = this.ctx;
+        c.setTransform(2, 0, 0, 2, 0, 0);
+        c.fillStyle = col(w.fill, "panel");
+        c.fillRect(w.x, w.y, w.w, w.h);
+        c.strokeStyle = col(w.stroke, "line");
+        c.strokeRect(w.x + .5, w.y + .5, w.w - 1, w.h - 1);
+        c.fillStyle = col(w.color, "accent");
+        c.font = font(w.font, w.size);
+        c.textBaseline = "top";
+        c.textAlign = "left";
+        c.fillText("DECODE CW  GPIO 4", w.x + 4, w.y + 2);
+        c.fillStyle = col(w.color, "ok");
+        c.textAlign = "right";
+        c.fillText("RUN", w.x + w.w - 4, w.y + 2);
+        c.textAlign = "left";
+        c.fillStyle = col(w.color, "muted");
+        c.fillText("SIG", w.x + 4, w.y + 14);
+        c.fillStyle = col(w.color, "track");
+        c.fillRect(w.x + 26, w.y + 16, w.w - 30, 4);
+        c.fillStyle = col(w.color, "ok");
+        c.fillRect(w.x + 26, w.y + 16, (w.w - 30) * 0.6, 4);
+        c.fillStyle = col(w.color, "fg");
+        c.fillText("....", w.x + 4, w.y + 26);
+        c.restore && c.restore();
+        break;
+      }
       case "wifi": {
         const bars = s.wifiBars == null ? 4 : s.wifiBars;
         if (bars <= 0) break;

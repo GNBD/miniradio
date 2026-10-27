@@ -15,6 +15,7 @@
 #include "ui_custom.h"
 #include "ui_custom_layout.h"
 #include "ui_runtime.h"
+#include "decode.h"
 
 extern bool s_agc_on;
 extern uint8_t s_softmute;
@@ -168,8 +169,20 @@ static void fmt_freq(uint32_t hz, int mode, int unit_mode, char *buf, size_t n,
     }
 }
 
+static int num_bind(uint8_t b, const ui_state_t *s);
+
 static int num_bind(uint8_t b, const ui_state_t *s)
 {
+    if (b == UC_B_SLEEP) {
+        int32_t remain = (int32_t)(s_sleep_deadline - now_ms());
+        if (!s_sleep_armed || s_sleep_min == 0) {
+            return 0;
+        }
+        return (remain > 0) ? (int)((remain + 999) / 1000) : 0;
+    }
+    if (b == UC_B_DECODE_LEVEL) {
+        return decode_level();
+    }
     switch (b) {
     case UC_B_RSSI: return s->have_rsq ? s->rsq.rssi : 0;
     case UC_B_SNR:  return s->have_rsq ? s->rsq.snr : 0;
@@ -555,6 +568,64 @@ static void draw_bandmap(const uc_widget_t *w, const ui_state_t *s)
 }
 
 /* Wi-Fi 신호 막대 (4단계): 펌웨어 기본 표시와 동일 규칙 */
+/* 디코드 패널: 상태/레벨/텍스트 4줄 */
+static void draw_decode_panel(const uc_widget_t *w)
+{
+    display_fill_round_rect(w->x, w->y, w->w, w->h, 8, col(UC_PANEL));
+    display_draw_round_rect(w->x, w->y, w->w, w->h, 8, col(UC_LINE));
+
+    char title[40];
+    snprintf(title, sizeof(title), "DECODE %s  GPIO %d",
+             decode_mode_str(), decode_gpio());
+    display_draw_text((int16_t)(w->x + 4), (int16_t)(w->y + 2), title,
+                      DISPLAY_FONT_TINY, col(UC_ACCENT), col(UC_PANEL),
+                      DISPLAY_DATUM_TL);
+
+    const char *st = strncmp(decode_text(), "ADC ERR", 7) == 0 ? "ERR" : "RUN";
+    display_draw_text((int16_t)(w->x + w->w - 4), (int16_t)(w->y + 2), st,
+                      DISPLAY_FONT_TINY, col(st[0] == 'E' ? UC_RED : UC_OK),
+                      col(UC_PANEL), DISPLAY_DATUM_TR);
+
+    display_draw_text((int16_t)(w->x + 4), (int16_t)(w->y + 14), "SIG",
+                      DISPLAY_FONT_TINY, col(UC_MUTED), col(UC_PANEL),
+                      DISPLAY_DATUM_TL);
+    int bw = w->w - 26;
+    if (bw < 8) { bw = 8; }
+    display_fill_rect((int16_t)(w->x + 26), (int16_t)(w->y + 16),
+                      (uint16_t)bw, 4, col(UC_TRACK));
+    int lv = decode_level();
+    if (lv < 0) { lv = 0; }
+    if (lv > 100) { lv = 100; }
+    display_fill_rect((int16_t)(w->x + 26), (int16_t)(w->y + 16),
+                      (uint16_t)(bw * lv / 100), 4, col(UC_OK));
+
+    const char *txt = decode_text();
+    int len = (int)strlen(txt);
+    int lines = (w->h - 30) / 13;
+    if (lines < 1) { lines = 1; }
+    if (lines > 4) { lines = 4; }
+    if (len == 0) {
+        display_draw_text((int16_t)(w->x + 4), (int16_t)(w->y + 26), "WAIT...",
+                          DISPLAY_FONT_SMALL, col(UC_MUTED), col(UC_PANEL),
+                          DISPLAY_DATUM_TL);
+    } else {
+        int per = 44;
+        int start = (len > per * lines) ? len - per * lines : 0;
+        for (int i = 0; i < lines && start < len; ++i) {
+            int n = len - start;
+            if (n > per) { n = per; }
+            char buf[48];
+            memcpy(buf, txt + start, (size_t)n);
+            buf[n] = '\0';
+            display_draw_text((int16_t)(w->x + 4),
+                              (int16_t)(w->y + 26 + i * 13), buf,
+                              DISPLAY_FONT_SMALL, col(UC_FG), col(UC_PANEL),
+                              DISPLAY_DATUM_TL);
+            start += n;
+        }
+    }
+}
+
 static void draw_wifi(const uc_widget_t *w, const ui_state_t *s)
 {
     int bars = 0;
@@ -674,6 +745,9 @@ void ui_custom_render(const ui_state_t *s)
             break;
         case UC_WIFI:
             draw_wifi(w, s);
+            break;
+        case UC_DECODE:
+            draw_decode_panel(w);
             break;
         }
     }

@@ -10,7 +10,7 @@
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root) root.MRRuntime = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
-  const TYPE = { rect: 0, text: 1, bar: 2, line: 3, freq: 4, rsq: 5, rds: 6, sig: 7, bandmap: 8, menu: 10, wifi: 11 };
+  const TYPE = { rect: 0, text: 1, bar: 2, line: 3, freq: 4, rsq: 5, rds: 6, sig: 7, bandmap: 8, menu: 10, wifi: 11, decode: 12 };
   const COLOR = { bg: 0, panel: 1, fg: 2, muted: 3, line: 4, accent: 5, accenth: 6,
     ok: 7, warn: 8, red: 9, track: 10, hsel: 11, none: 12 };
   const FONT = { tiny: 0, small: 1, large: 2 };
@@ -19,7 +19,7 @@
     "none", "freq", "mode", "band", "rssi", "snr", "clock", "date", "ps", "rt",
     "pty", "preset", "pname", "ats", "batt", "vol", "bw", "step", "bfo",
     "agc", "sm", "afc", "avc", "sq", "stereo", "line1", "line2", "line3",
-    "eibi", "toast", "wifi", "status", "battv",
+    "eibi", "toast", "wifi", "status", "battv", "sleep", "dec_level",
   ];
   const PALETTE_KEYS = ["bg", "panel", "hl", "hsel", "cell", "line", "track",
     "fg", "muted", "accent", "accenth", "gold", "ok", "warn", "red", "blue"];
