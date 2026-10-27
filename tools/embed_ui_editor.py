@@ -6,8 +6,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "uiedt")
-OUT_C = os.path.join(ROOT, "main", "ui_editor_assets.c")
-OUT_H = os.path.join(ROOT, "main", "ui_editor_assets.h")
+OUT_C = os.path.join(ROOT, "main", "ui", "ui_editor_assets.c")
+OUT_H = os.path.join(ROOT, "main", "ui", "ui_editor_assets.h")
 
 SKIP = {"README.md"}
 
