@@ -800,11 +800,13 @@ void opt_apply(int page, int item, int idx)
             if (s_radio_ok && s_ui.mode == RADIO_MODE_FM) {
                 si4732_set_deemphasis(&s_radio, s_deemph_75);
             }
+            s_freq_dirty = true;
             mark_change();
             break;
         case RM_AGC:
             s_agc_on = (idx == 0);
             dsp_apply();
+            s_freq_dirty = true;
             mark_change();
             break;
         case RM_RFGAIN:
@@ -815,11 +817,13 @@ void opt_apply(int page, int item, int idx)
         case RM_AVC:
             s_avc = (uint8_t)((idx < 0) ? 0 : (idx > 90 ? 90 : idx));
             dsp_apply();
+            s_freq_dirty = true;
             mark_change();
             break;
         case RM_SOFTMUTE:
             s_softmute = (uint8_t)((idx < 0) ? 0 : (idx > 63 ? 63 : idx));
             dsp_apply();
+            s_freq_dirty = true;
             mark_change();
             break;
         case RM_SQUELCH: {
@@ -844,6 +848,7 @@ void opt_apply(int page, int item, int idx)
                 if (s_radio_ok) {
                     si4732_set_bfo(&s_radio, radio_bfo_value());
                 }
+                s_freq_dirty = true;
                 mark_change();
             }
             break;
