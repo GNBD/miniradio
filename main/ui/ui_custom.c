@@ -188,6 +188,15 @@ static int num_bind(uint8_t b, const ui_state_t *s)
     case UC_B_SNR:  return s->have_rsq ? s->rsq.snr : 0;
     case UC_B_BATT: return s->have_battery ? s->battery.percent : 0;
     case UC_B_VOL:  return s->volume;
+    case UC_B_SQ: {
+        if (!s_squelch_on) {
+            return 0;
+        }
+        int sq = (s->mode == RADIO_MODE_FM) ? 0
+               : (s->mode == RADIO_MODE_AM) ? 1
+               : (s->mode == RADIO_MODE_LSB) ? 2 : 3;
+        return s_squelch_thr[sq];
+    }
     default:        return 0;
     }
 }
