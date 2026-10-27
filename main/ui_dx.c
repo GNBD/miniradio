@@ -650,6 +650,34 @@ void ui_draw_adv_signal4b(const ui_state_t *s)
     }
 }
 
+/* Sleep 남은 시간: 'VOL/BRT' 줄 바로 아래(우측 정렬)에 표시.
+   매초 부분 갱신할 수 있도록 별도 함수로 둔다. */
+void ui_draw_sleep_badge(void)
+{
+    const int right = 312;
+    const int y = 33;
+    const int clear_x = 226;
+    const int clear_w = 88;
+
+    if (!(s_sleep_min > 0 && s_sleep_armed)) {
+        return;
+    }
+    int32_t remain = (int32_t)(s_sleep_deadline - now_ms());
+    if (remain < 0) {
+        remain = 0;
+    }
+    int sec = (int)((remain + 999) / 1000);
+    if (sec > 99 * 60 + 59) {
+        sec = 99 * 60 + 59;
+    }
+    char b[20];
+    snprintf(b, sizeof(b), "SLEEP %d:%02d", sec / 60, sec % 60);
+    int tw = display_text_width(b, DISPLAY_FONT_TINY);
+    display_fill_rect(clear_x, y - 1, clear_w, 11, UI_BG);
+    display_draw_text((int16_t)(right - tw), y, b, DISPLAY_FONT_TINY, UI_ACC,
+                      UI_BG, DISPLAY_DATUM_TR);
+}
+
 static void ui_draw_all_adv4(const ui_state_t *s)
 {
     s_radio_draw_seq++;
@@ -667,6 +695,8 @@ static void ui_draw_all_adv4(const ui_state_t *s)
     snprintf(vb, sizeof(vb), "VOL %u  BRT %u", s->volume, s_brightness);
     display_draw_text(312, 24, vb, DISPLAY_FONT_TINY, UI_MUTED, UI_BG,
                       DISPLAY_DATUM_TR);
+
+    ui_draw_sleep_badge();
 
     draw_saved_badges(s);
 

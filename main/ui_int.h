@@ -53,6 +53,9 @@ extern int16_t  s_utc_min;
 extern int      s_cpu_mhz;
 extern uint32_t now_ms(void);
 extern uint16_t s_quick_mask;
+extern uint16_t s_sleep_min;
+extern uint32_t s_sleep_deadline;
+extern bool     s_sleep_armed;
 extern const char *const QA_LABELS[];
 
 /* ---- 공유 매크로 ---- */

@@ -164,7 +164,8 @@ char ui_keypad_char(int idx, bool upper, bool sym);
 
 void ui_init(void);
 void ui_theme_set(int theme);
-void ui_draw_all(const ui_state_t *s);        /* RADIO 페이지 전체 */
+void ui_draw_all(const ui_state_t *s);
+void ui_draw_sleep_badge(void);        /* RADIO 페이지 전체 */
 void ui_draw_radio_freq(const ui_state_t *s); /* 모드별 주파수 갱신 */
 void ui_draw_adv_signal4(const ui_state_t *s);
 void ui_draw_adv_signal4b(const ui_state_t *s);
