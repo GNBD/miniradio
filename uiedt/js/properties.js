@@ -126,6 +126,17 @@ const Props = {
       body.appendChild(this.row("Layer", lz, up, dn));
     }
     {
+      const front = document.createElement("button");
+      front.className = "btn"; front.textContent = T("맨 앞으로");
+      front.style.padding = "3px 7px";
+      front.onclick = () => { w.z = ED.topZ(); upd(); Props.render(); if (window.LayerView) LayerView.render(); };
+      const back = document.createElement("button");
+      back.className = "btn"; back.textContent = T("맨 뒤로");
+      back.style.padding = "3px 7px";
+      back.onclick = () => { w.z = -1; upd(); Props.render(); if (window.LayerView) LayerView.render(); };
+      body.appendChild(this.row("Order", front, back));
+    }
+    {
       const others = ED.project.items.filter((x) => x !== w && x.uid);
       const opts = [["", "— none —"]].concat(others.map((x) =>
         [String(x.uid), (x.t || "?") + (x.bind ? "/" + x.bind : "") + " #" + x.uid]));

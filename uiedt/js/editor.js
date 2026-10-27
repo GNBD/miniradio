@@ -535,6 +535,15 @@ const ED = {
   clamp(v, a, b) { return Math.max(a, Math.min(b, v)); },
 
   /* ---------- model ---------- */
+  topZ() {
+    let z = 0;
+    for (const w of this.project.items) {
+      const v = (w.z == null ? 0 : w.z);
+      if (v > z) z = v;
+    }
+    return z + 1;
+  },
+
   addModule(mod, cx, cy) {
     const items = mod.make();
     let bx = Infinity, by = Infinity, bw = -Infinity, bh = -Infinity;
@@ -555,6 +564,8 @@ const ED = {
       w.y = Math.round(w.y + dy);
       w.origin = this.originFor(modMeta, w);
       this.ensureUid(w);
+      /* 새 모듈은 항상 최상위 레이어 (겹칠 때 아래에 깔리지 않도록) */
+      w.z = this.topZ();
       this.project.items.push(w);
     }
     this.setSel(this.project.items.length - 1);
@@ -575,6 +586,7 @@ const ED = {
         for (const w of made) {
           w.origin = this.originFor(meta, w);
           this.ensureUid(w);
+          w.z = this.topZ();
           this.project.items.push(w);
         }
       }
@@ -777,7 +789,7 @@ const ED = {
       c.fillStyle = "#0072de";
       c.strokeStyle = "#ffffff";
       c.lineWidth = 1;
-      const hw = 6;
+      const hw = 9;
       const pts = [
         [w.x, w.y], [w.x + w.w / 2, w.y], [w.x + w.w, w.y],
         [w.x, w.y + w.h / 2], [w.x + w.w, w.y + w.h / 2],
