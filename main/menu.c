@@ -77,6 +77,7 @@ void rmenu_build(void)
           (None/미선택이면 메뉴에 아무것도 추가하지 않는다) */
     exlu_manifest_t apps[1];
     int na = 0;
+#if EXLU_ENABLE
     {
         const char *boot = exlu_get_boot_id();
         if (boot && boot[0]) {
@@ -90,6 +91,7 @@ void rmenu_build(void)
             }
         }
     }
+#endif
     for (int i = 0; i < na && n < RMENU_MAX; ++i) {
         /* 기기 폰트는 ASCII 만 표시 가능: 비ASCII/제어문자는 '_' 로 */
         size_t j = 0;
@@ -1005,6 +1007,7 @@ void menu_action(int item)
     int id = menu_id_at(item);
     bool mod_hit = false;
     if (id >= EXLU_MENU_BASE) {
+#if EXLU_ENABLE
         const char *boot = exlu_get_boot_id();
         if (boot && boot[0]) {
             const char *err = exlu_app_launch(boot);
@@ -1014,6 +1017,7 @@ void menu_action(int item)
                 page_radio();
             }
         }
+#endif
         return;
     }
     if (id >= RM_MOD_A && id <= RM_MOD_H) {

@@ -414,9 +414,11 @@ void app_main(void)
         memset(&s_ats_list, 0, sizeof(s_ats_list));
     }
     eibi_fs_mount();
+#if EXLU_ENABLE
     if (s_theme == UI_THEME_CUSTOM) {
         exlu_boot_apply_theme();   /* littlefs 의 테마 EXLU 자동 적용 */
     }
+#endif
     ui_runtime_init(s_theme == UI_THEME_CUSTOM);
     if (s_theme == UI_THEME_CUSTOM && !ui_runtime_enabled()) {
         s_theme = 0;
@@ -473,8 +475,10 @@ void app_main(void)
         brightness_apply();
         splash_show();
         splash_service_input();
+#if EXLU_ENABLE
         /* littlefs 의 EXLU 선택 (없으면 즉시 통과) */
         exlu_boot_select();
+#endif
         /* 스플래시를 짧게만 노출: 이후 라디오 준비 전까지 화면을 비움 */
         display_fill_screen(UI_BG);
         display_flush();

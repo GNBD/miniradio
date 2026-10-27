@@ -13,6 +13,7 @@
 #include "app.h"
 #include "ui_runtime.h"
 #include "ui_exlu.h"
+#include "ui_exlu_app.h"
 #include "ui_editor_assets.h"
 
 static const char *TAG = "ui_web";
@@ -417,16 +418,18 @@ esp_err_t ui_web_register(httpd_handle_t server)
     static httpd_uri_t ui_index = {
         .uri = "/ui/", .method = HTTP_GET, .handler = asset_handler,
     };
+    httpd_register_uri_handler(server, &ui_root);
+    httpd_register_uri_handler(server, &ui_index);
+#if EXLU_ENABLE
     static httpd_uri_t ext_root = {
         .uri = "/ui/extended", .method = HTTP_GET, .handler = asset_handler,
     };
     static httpd_uri_t ext_index = {
         .uri = "/ui/extended/", .method = HTTP_GET, .handler = asset_handler,
     };
-    httpd_register_uri_handler(server, &ui_root);
-    httpd_register_uri_handler(server, &ui_index);
     httpd_register_uri_handler(server, &ext_root);
     httpd_register_uri_handler(server, &ext_index);
+#endif
 
     static httpd_uri_t assets[64];
     for (int i = 0; i < ui_editor_asset_count && i < 64; ++i) {
@@ -482,11 +485,16 @@ esp_err_t ui_web_register(httpd_handle_t server)
         .uri = "/api/exlu/apply", .method = HTTP_POST,
         .handler = api_exlu_apply,
     };
+#if EXLU_ENABLE
     httpd_register_uri_handler(server, &exlu_list_u);
     httpd_register_uri_handler(server, &exlu_get_u);
     httpd_register_uri_handler(server, &exlu_save_u);
     httpd_register_uri_handler(server, &exlu_del_u);
     httpd_register_uri_handler(server, &exlu_apply_u);
+#else
+    (void)exlu_list_u; (void)exlu_get_u; (void)exlu_save_u;
+    (void)exlu_del_u; (void)exlu_apply_u;
+#endif
     ESP_LOGI(TAG, "%d assets, api ready", ui_editor_asset_count);
     return ESP_OK;
 }

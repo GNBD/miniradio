@@ -15,6 +15,11 @@
 
 #include "ui_exlu.h"
 
+/* EXTENDED(EXLU) 기능 스위치: 0 = 숨김/비활성 */
+#ifndef EXLU_ENABLE
+#define EXLU_ENABLE 0
+#endif
+
 /* 메뉴 id 대역 (RM_* 와 충돌하지 않게) */
 #define EXLU_MENU_BASE 0x5000
 
