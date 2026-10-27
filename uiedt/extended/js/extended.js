@@ -1,9 +1,58 @@
 /*
  * SPDX-License-Identifier: MIT
  * extended.js - EXTENDED Editor: EXLU 저장/불러오기/적용 + 탭.
+ *
+ * 확장 에디터 전용 카탈로그:
+ *  - 기본 템플릿(Default/Band map/Minimal)을 제거하고 앱 예제로 대체
+ *  - 디코드 UI 패널 모듈 추가
  */
 (function () {
   const $ = (id) => document.getElementById(id);
+
+  /* ---------------- 확장 에디터 전용 모듈/템플릿 ---------------- */
+  const DECODE_MODULE = {
+    id: "decode", cat: "APP", name: "DECODE panel", sub: "디코드 상태/텍스트 4줄",
+    colors: ["panel", "line", "gold", "ok", "fg", "muted"],
+    make: () => [
+      W({ t: "rect", x: 6, y: 72, w: 308, h: 96, fill: "panel", stroke: "line", r: 8 }),
+      W({ t: "text", x: 10, y: 74, w: 200, h: 10, text: "DECODE CW  GPIO 4", size: "tiny", color: "gold", align: "l" }),
+      W({ t: "text", x: 270, y: 74, w: 40, h: 10, text: "RUN", size: "tiny", color: "ok", align: "r" }),
+      W({ t: "text", x: 10, y: 86, w: 20, h: 10, text: "SIG", size: "tiny", color: "muted", align: "l" }),
+      W({ t: "bar", x: 32, y: 88, w: 278, h: 4, bind: "rssi", max: 63, color: "ok" }),
+      W({ t: "text", x: 10, y: 98, w: 300, h: 12, bind: "line1", size: "small", color: "fg", align: "l" }),
+      W({ t: "text", x: 10, y: 111, w: 300, h: 12, bind: "line2", size: "small", color: "fg", align: "l" }),
+      W({ t: "text", x: 10, y: 124, w: 300, h: 12, bind: "line3", size: "small", color: "fg", align: "l" }),
+      W({ t: "text", x: 10, y: 137, w: 300, h: 12, text: "....", size: "small", color: "muted", align: "l" }),
+      W({ t: "text", x: 10, y: 154, w: 300, h: 10, text: "TURN:GPIO  CLICK:MODE  HOLD:EXIT", size: "tiny", color: "muted", align: "l" }),
+    ],
+  };
+
+  if (typeof MODULES !== "undefined" && !MODULES.some((m) => m.id === "decode")) {
+    MODULES.push(DECODE_MODULE);
+  }
+
+  if (typeof TEMPLATES !== "undefined") {
+    TEMPLATES.length = 0;
+    TEMPLATES.push(
+      { id: "tpl-decode", name: "Decode UI (예제)", sub: "디코드 패널 + 라디오 상단",
+        ids: ["headerfull", "bandfull", "freq", "rsq", "decode"] },
+      { id: "tpl-decode-min", name: "Decode 최소", sub: "주파수 + 디코드 패널",
+        ids: ["headerfull", "freq", "decode"] },
+      { id: "tpl-blank", name: "빈 레이아웃", sub: "백지에서 시작", ids: [] }
+    );
+  }
+
+  const SCRIPT_EXAMPLE = [
+    "-- Decode UI 예제 (확장 앱 스크립트)",
+    "-- on_tick 은 100ms 마다 호출됩니다.",
+    "function on_tick(ms)",
+    "  -- 여기서 디코드 텍스트/레벨을 갱신할 수 있습니다",
+    "end",
+    "",
+    "function on_click()",
+    "  -- 디코드 모드 전환",
+    "end",
+  ].join("\n");
 
   function say(el, text, cls) {
     const n = $(el);
@@ -202,6 +251,9 @@
       $("exType").disabled = theme;
       if (theme) $("exType").value = "layout";
     });
+    if ($("exScript") && !$("exScript").value) {
+      $("exScript").value = SCRIPT_EXAMPLE;
+    }
     refresh();
   });
 })();

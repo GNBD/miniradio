@@ -67,6 +67,12 @@
     }
     const mode = forceMode || (w.modes == null ? 7 : w.modes);
     const bind = BIND.indexOf(w.bind);
+    const events = w.events && typeof w.events === "object"
+      ? Object.keys(w.events)
+          .filter((k) => w.events[k])
+          .map((k) => k + "=" + w.events[k])
+          .join(",")
+      : "";
     return [
       t, Math.round(w.x), Math.round(w.y), Math.round(w.w), Math.round(w.h),
       mode,
@@ -79,6 +85,8 @@
       w.chip ? 1 : 0,
       w.max || 0,
       Math.max(50, Math.min(200, Math.round(w.scale || 100))),
+      w.uid || 0,
+      events,
     ].join("\t") + "\t" + clean(w.text);
   }
 

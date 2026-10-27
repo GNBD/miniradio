@@ -62,6 +62,8 @@ typedef struct {
     int16_t  x, y, w, h;
     uint16_t max;
     const char *text;
+    uint16_t uid;       /* 위젯 고유 번호 (Lua 이벤트 바인딩용, 0=없음) */
+    const char *events; /* 이벤트 핸들러 목록: "click=w1_click,rotate=w1_rot" */
     void (*fn)(int x, int y, int w, int h);   /* UC_CUSTOM */
 } uc_widget_t;
 

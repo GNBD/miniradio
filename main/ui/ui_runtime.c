@@ -107,7 +107,7 @@ static bool parse_text(const char *text, size_t len, uc_widget_t *out,
         char *cur = line;
         int tabs = 0;
         for (char *q = line; *q; ++q) if (*q == '\t') ++tabs;
-        if (tabs != 14 && tabs != 15) { free(buf); return false; }
+        if (tabs != 14 && tabs != 15 && tabs != 17) { free(buf); return false; }
         for (int i = 0; i < tabs; ++i) {
             char *t = strchr(cur, '\t');
             if (!t) { free(buf); return false; }
@@ -117,8 +117,9 @@ static bool parse_text(const char *text, size_t len, uc_widget_t *out,
         }
         f[tabs] = cur;
 
-        long v[15];
-        for (int i = 0; i < tabs; ++i) {
+        long v[18] = {0};
+        int nnum = (tabs == 17) ? 15 : tabs;
+        for (int i = 0; i < nnum; ++i) {
             if (!parse_num(f[i], &v[i])) { free(buf); return false; }
         }
         if (v[0] < 0 || v[0] > UC_WIFI) { free(buf); return false; }
@@ -137,11 +138,22 @@ static bool parse_text(const char *text, size_t len, uc_widget_t *out,
         if (v[12] != 0 && v[12] != 1) { free(buf); return false; }
         if (v[13] < 0 || v[13] > 65535) { free(buf); return false; }
         int scale = 100;
-        if (tabs == 15) {
+        if (tabs == 15 || tabs == 17) {
             if (v[14] < 50 || v[14] > 200) { free(buf); return false; }
             scale = (int)v[14];
         }
-        if (strlen(f[tabs]) >= 64) { free(buf); return false; }
+        const char *ev = NULL;
+        long uid = 0;
+        const char *txt = f[tabs];
+        if (tabs == 17) {
+            if (!parse_num(f[15], &uid) || uid < 0 || uid > 65535) {
+                free(buf); return false;
+            }
+            if (strlen(f[16]) >= 160) { free(buf); return false; }
+            ev = f[16][0] ? f[16] : NULL;
+            txt = f[17];
+        }
+        if (strlen(txt) >= 64) { free(buf); return false; }
 
         uc_widget_t *w = &out[n];
         memset(w, 0, sizeof(*w));
@@ -160,7 +172,9 @@ static bool parse_text(const char *text, size_t len, uc_widget_t *out,
         w->chip = (uint8_t)v[12];
         w->max = (uint16_t)v[13];
         w->scale = (uint8_t)scale;
-        w->text = f[tabs][0] ? f[tabs] : NULL;
+        w->text = txt[0] ? txt : NULL;
+        w->uid = (uint16_t)uid;
+        w->events = ev;
         w->fn = NULL;
         ++n;
     }
