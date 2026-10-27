@@ -655,9 +655,10 @@ void ui_draw_adv_signal4b(const ui_state_t *s)
 void ui_draw_sleep_badge(void)
 {
     const int right = 312;
-    const int y = 33;
-    const int clear_x = 226;
-    const int clear_w = 88;
+    /* BRT 줄(24)의 배지(pill) 아래, 주파수 큰 글씨 오른쪽 여백 */
+    const int y = 42;
+    const int clear_x = 186;
+    const int clear_w = 134;
 
     if (!(s_sleep_min > 0 && s_sleep_armed)) {
         return;
@@ -673,8 +674,12 @@ void ui_draw_sleep_badge(void)
     char b[20];
     snprintf(b, sizeof(b), "SLEEP %d:%02d", sec / 60, sec % 60);
     int tw = display_text_width(b, DISPLAY_FONT_TINY);
-    display_fill_rect(clear_x, y - 1, clear_w, 11, UI_BG);
-    display_draw_text((int16_t)(right - tw), y, b, DISPLAY_FONT_TINY, UI_ACC,
+    display_fill_rect(clear_x, y - 2, clear_w, 14, UI_BG);
+    int tx = right - tw;
+    if (tx < clear_x) {
+        tx = clear_x;
+    }
+    display_draw_text((int16_t)tx, y, b, DISPLAY_FONT_TINY, UI_ACC,
                       UI_BG, DISPLAY_DATUM_TR);
 }
 
