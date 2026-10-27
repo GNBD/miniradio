@@ -672,14 +672,11 @@ void ui_draw_sleep_badge(void)
         sec = 99 * 60 + 59;
     }
     char b[20];
-    snprintf(b, sizeof(b), "SLEEP %d:%02d", sec / 60, sec % 60);
-    int tw = display_text_width(b, DISPLAY_FONT_TINY);
+    snprintf(b, sizeof(b), "S %d:%02d:%02d", sec / 3600, (sec / 60) % 60,
+             sec % 60);
     display_fill_rect(clear_x, y - 2, clear_w, 14, UI_BG);
-    int tx = right - tw;
-    if (tx < clear_x) {
-        tx = clear_x;
-    }
-    display_draw_text((int16_t)tx, y, b, DISPLAY_FONT_TINY, UI_ACC,
+    /* DISPLAY_DATUM_TR: x가 오른쪽 끝 기준이므로 right를 그대로 넘긴다 */
+    display_draw_text((int16_t)right, y, b, DISPLAY_FONT_TINY, UI_ACC,
                       UI_BG, DISPLAY_DATUM_TR);
 }
 
