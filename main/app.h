@@ -270,7 +270,6 @@ extern storage_splash_t s_splash;
 extern int      s_splash_cursor;
 extern uint16_t s_quick_mask;
 extern uint8_t  s_dbg_sig;   /* 진단: 0=OFF, 1=LOG, 2=HOLD(리드로우 정지), 3=SLOW 250ms */
-extern bool     s_sleep_cd;  /* Sleep 카운트다운 표시 중 (주기 갱신 억제용) */
 extern uint8_t  s_sig_view;  /* SIG 칸 표시: 0=그래프,1=바,2=프리셋,3=RDS,4=상태 */
 extern int      s_qcfg_cur;
 extern int      s_qcfg_top;

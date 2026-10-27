@@ -110,16 +110,6 @@ void tune_commit(uint32_t now)
     s_tune_save_ms = now;
 }
 
-/* Sleep 카운트다운 중 조작이 들어오면 타이머를 처음부터 다시 센다. */
-static void sleep_input_defer(uint32_t now)
-{
-    if (!s_sleep_cd || s_sleep_min == 0) {
-        return;
-    }
-    s_sleep_deadline = now + (uint32_t)s_sleep_min * 60000u;
-    s_sleep_armed = true;
-}
-
 void on_encoder(int d)
 {
     if (d == 0) {
@@ -135,7 +125,6 @@ void on_encoder(int d)
     if ((int32_t)(now - s_input_lock) < 0) {
         return;
     }
-    sleep_input_defer(now);
     if (s_hmi == HMI_TUNE && !s_seeking && s_radio_ok && s_ats != ATS_SEEK) {
         bool pressed = gpio_get_level((gpio_num_t)BOARD_ENC_PUSH_GPIO) == 0;
         if (pressed) {
@@ -373,7 +362,6 @@ void on_button(bool long_press)
     if ((int32_t)(now - s_input_lock) < 0) {
         return;
     }
-    sleep_input_defer(now);
     if (s_digit_mode) {
         if (s_digit_swallow) {
             s_digit_swallow = false;

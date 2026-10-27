@@ -39,27 +39,6 @@ void ui_draw_loading(const char *msg)
     display_flush();
 }
 
-/* Sleep 진입 5초 카운트다운 — SSB 로딩 패널과 같은 스타일 */
-void ui_draw_sleep_countdown(int sec)
-{
-    if (sec < 0) { sec = 0; }
-    if (sec > 5) { sec = 5; }
-    uint16_t col = (sec <= 2) ? UI_WARN : UI_ACC;
-    /* 뒤에 남은 주파수/상태 글자가 비쳐 보이지 않도록 화면을 비운다 */
-    display_fill_screen(UI_BG);
-    panel(60, 50, 200, 72, 14, UI_PANEL, UI_ACC);
-    display_draw_text(UI_W / 2, 58, "SLEEP TIMER", DISPLAY_FONT_TINY, UI_MUTED,
-                      UI_PANEL, DISPLAY_DATUM_TC);
-    char v[8];
-    snprintf(v, sizeof(v), "%d", sec);
-    display_draw_text(UI_W / 2, 82, v, DISPLAY_FONT_LARGE,
-                      (sec <= 2) ? UI_WARN : UI_FG, UI_PANEL,
-                      DISPLAY_DATUM_TC);
-    bar(80, 100, 160, 6, sec, 5, col);
-    display_draw_text(UI_W / 2, 114, "POWER OFF", DISPLAY_FONT_TINY,
-                      UI_MUTED, UI_PANEL, DISPLAY_DATUM_TC);
-    display_flush();
-}
 
 void ui_draw_volume(const ui_state_t *s, bool show)
 {

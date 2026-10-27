@@ -901,8 +901,8 @@ void rsq_poll(uint32_t now)
         s_ui.rsq = r;
         s_ui.have_rsq = true;
         s_ui.stereo = r.stereo;
-        if (s_dbg_sig == 2 || s_sleep_cd) {
-            return;             /* 진단: 리드로우 정지 / Sleep 카운트다운 중 */
+        if (s_dbg_sig == 2) {
+            return;             /* 진단: 리드로우 정지 */
         }
         int64_t t0 = esp_timer_get_time();
         ui_draw_adv_signal4b(&s_ui);
@@ -946,15 +946,13 @@ void rsq_poll(uint32_t now)
         s_squelch_muted = mute;
         si4732_set_mute(&s_radio, mute);
     }
-    if (stereo_changed && !mute_changed && !s_sleep_cd &&
+    if (stereo_changed && !mute_changed &&
         (s_hmi == HMI_TUNE || s_hmi == HMI_SEEK)) {
         ui_draw_band_meta(&s_ui);
     }
 
     if (s_hmi == HMI_TUNE || s_hmi == HMI_SEEK) {
-        if (s_sleep_cd) {
-            /* Sleep 카운트다운 패널이 떠 있는 동안은 주기 갱신을 멈춘다 */
-        } else if (s_dbg_sig == 2) {
+        if (s_dbg_sig == 2) {
             /* 진단: 패널 리드로우 정지 (값/스켈치는 계속 갱신) */
         } else {
             int64_t t0 = esp_timer_get_time();
@@ -1014,7 +1012,7 @@ void rds_poll(uint32_t now)
     static uint32_t last_rds_hash;
     if (h != last_rds_hash) {
         last_rds_hash = h;
-        if (s_hmi == HMI_TUNE && !s_sleep_cd) {
+        if (s_hmi == HMI_TUNE) {
             ui_draw_all(&s_ui);
         }
     }
@@ -1052,7 +1050,7 @@ void battery_poll(uint32_t now)
         if (changed) {
             wifi_update_tx_power();
         }
-        if (changed && s_hmi == HMI_TUNE && !s_sleep_cd) {
+        if (changed && s_hmi == HMI_TUNE) {
             ui_draw_header(&s_ui);
             ui_draw_status(&s_ui);
         }

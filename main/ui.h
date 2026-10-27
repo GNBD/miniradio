@@ -173,7 +173,6 @@ void ui_draw_band_meta(const ui_state_t *s);
 void ui_draw_status(const ui_state_t *s);
 void ui_draw_volume(const ui_state_t *s, bool show);
 void ui_draw_loading(const char *msg);
-void ui_draw_sleep_countdown(int sec);
 void ui_draw_home(const ui_state_t *s, int cursor, const ui_app_t *apps,
                   int count);
 void ui_draw_clock(const ui_state_t *s);

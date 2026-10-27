@@ -143,7 +143,6 @@ storage_splash_t s_splash;
 
 uint16_t s_quick_mask = 0x000F;
 uint8_t  s_dbg_sig;   /* 진단용, 저장하지 않음 (부팅 시 NORMAL) */
-bool     s_sleep_cd;  /* Sleep 카운트다운 표시 중 */
 uint8_t  s_sig_view;  /* SIG 칸 표시 (0=그래프) */
 int      s_qcfg_cur;
 int      s_qcfg_top;

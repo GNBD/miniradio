@@ -265,27 +265,8 @@ void sleep_check(uint32_t now)
     {
         int32_t remain = (int32_t)(s_sleep_deadline - now);
         if (remain > 0) {
-            static int cd_sec = -1;
-            static bool cd_on;
-            bool radio_scr = (s_hmi == HMI_TUNE || s_hmi == HMI_SEEK);
-            if (remain <= 5000 && radio_scr) {
-                int sec = (int)((remain + 999) / 1000);
-                if (sec != cd_sec) {
-                    cd_sec = sec;
-                    cd_on = true;
-                    s_sleep_cd = true;
-                    ui_draw_sleep_countdown(sec);
-                }
-            } else if (cd_on) {
-                /* 조작/화면 전환으로 카운트다운이 끝난 경우 원래 화면 복원 */
-                cd_on = false;
-                cd_sec = -1;
-                s_sleep_cd = false;
-                page_redraw();
-            }
             return;
         }
-        s_sleep_cd = false;
     }
     ESP_LOGI(TAG, "sleep timer expired, entering deep sleep (reset to wake)");
 
