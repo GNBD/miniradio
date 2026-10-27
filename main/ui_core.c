@@ -292,23 +292,9 @@ void draw_header_msg(const ui_state_t *s)
     const char *msg = NULL;
     uint16_t col = UI_MUTED;
     char seek_buf[20];
-    char sleep_buf[20];
     if (!s->radio_ok) {
         msg = "ERR";
         col = UI_WARN;
-    } else if (s_sleep_min > 0 && s_sleep_armed) {
-        int32_t remain = (int32_t)(s_sleep_deadline - now_ms());
-        if (remain < 0) {
-            remain = 0;
-        }
-        int sec = (int)((remain + 999) / 1000);
-        if (sec > 99 * 60 + 59) {
-            sec = 99 * 60 + 59;
-        }
-        snprintf(sleep_buf, sizeof(sleep_buf), "SLEEP %d:%02d",
-                 sec / 60, sec % 60);
-        msg = sleep_buf;
-        col = UI_ACC;
     } else if (s->seeking) {
         int pct = 0;
         if (s->sw_max > 0) {

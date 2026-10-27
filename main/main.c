@@ -619,14 +619,6 @@ void app_main(void)
                 ui_draw_radio_freq(&s_ui);
             }
         }
-        if ((s_hmi == HMI_TUNE || s_hmi == HMI_SEEK) &&
-            s_sleep_min > 0 && s_sleep_armed) {
-            static uint32_t sleep_hdr_ms;
-            if ((now - sleep_hdr_ms) >= 1000u) {
-                sleep_hdr_ms = now;
-                draw_header_msg(&s_ui);
-            }
-        }
         seek_poll(now);
         ats_poll(now);
         if (s_hmi == HMI_DECODE && decode_poll(now)) {
