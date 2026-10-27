@@ -11,6 +11,19 @@ const I18N = {
   lang: "ko",
 
   dict: {
+    "Sleep 남은 시간": "Sleep remaining",
+    "SLEEP 초 표시": "Show remaining sleep seconds",
+    "디코드 패널: GPIO/모드/줄 수를 옵션 문자열로 지정합니다.": "Decode panel: set GPIO / mode / lines with the option string.",
+    "GPIO/모드를 프로퍼티에서 설정": "Set GPIO / mode in properties",
+    "맨 앞으로": "Bring to front",
+    "맨 뒤로": "Send to back",
+    "기기에 저장": "Save to device",
+    "PC로 내려받기": "Download to PC",
+    "레이아웃 미리보기": "Layout preview",
+    "레이아웃 탭에서 배치한 결과입니다. 이 화면을 기준으로 스크립트/블록을 작성하세요.": "This is the layout result. Write scripts/blocks based on this screen.",
+    "디코드 상태/레벨/텍스트": "decode status / level / text",
+    "디코드 상태/레벨": "decode status / level",
+    "SLEEP 초": "SLEEP seconds",
     /* ---------- static shell ---------- */
     "에디터를 불러오는 중...": "Loading editor...",
     "저장 안 됨 — Download로 저장하세요": "Unsaved — use Download to save",
