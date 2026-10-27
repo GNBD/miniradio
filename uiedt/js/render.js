@@ -189,45 +189,40 @@ const Render = {
         break;
       }
       case "batt_icon": {
-        const c = this.ctx;
         const pct = Math.max(0, Math.min(100, Number(s.batt) || 0));
-        c.setTransform(2, 0, 0, 2, 0, 0);
-        c.fillStyle = col(w.fill, "cell");
-        c.fillRect(w.x, w.y, 26, 11);
-        c.strokeStyle = col(w.stroke, "line");
-        c.strokeRect(w.x + .5, w.y + .5, 25, 10);
-        c.fillRect(w.x + 26, w.y + 3, 2, 5);
-        c.fillStyle = pct <= 15 ? col(w.color, "warn")
-                    : pct <= 35 ? col(w.color, "accent") : col(w.color, "ok");
-        c.fillRect(w.x + 2, w.y + 2, 20 * pct / 100, 7);
-        c.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = c(wg.fill || "panel");
+        ctx.fillRect(wg.x, wg.y, 26, 11);
+        ctx.strokeStyle = c(wg.stroke || "line");
+        ctx.strokeRect(wg.x + .5, wg.y + .5, 25, 10);
+        ctx.fillStyle = c(wg.stroke || "line");
+        ctx.fillRect(wg.x + 26, wg.y + 3, 2, 5);
+        ctx.fillStyle = pct <= 15 ? c("warn")
+                      : pct <= 35 ? c("accent") : c(wg.color || "ok");
+        ctx.fillRect(wg.x + 2, wg.y + 2, 20 * pct / 100, 7);
         break;
       }
       case "decode": {
-        const c = this.ctx;
-        c.setTransform(2, 0, 0, 2, 0, 0);
-        c.fillStyle = col(w.fill, "panel");
-        c.fillRect(w.x, w.y, w.w, w.h);
-        c.strokeStyle = col(w.stroke, "line");
-        c.strokeRect(w.x + .5, w.y + .5, w.w - 1, w.h - 1);
-        c.fillStyle = col(w.color, "accent");
-        c.font = font(w.font, w.size);
-        c.textBaseline = "top";
-        c.textAlign = "left";
-        c.fillText("DECODE CW  GPIO 4", w.x + 4, w.y + 2);
-        c.fillStyle = col(w.color, "ok");
-        c.textAlign = "right";
-        c.fillText("RUN", w.x + w.w - 4, w.y + 2);
-        c.textAlign = "left";
-        c.fillStyle = col(w.color, "muted");
-        c.fillText("SIG", w.x + 4, w.y + 14);
-        c.fillStyle = col(w.color, "track");
-        c.fillRect(w.x + 26, w.y + 16, w.w - 30, 4);
-        c.fillStyle = col(w.color, "ok");
-        c.fillRect(w.x + 26, w.y + 16, (w.w - 30) * 0.6, 4);
-        c.fillStyle = col(w.color, "fg");
-        c.fillText("....", w.x + 4, w.y + 26);
-        c.restore && c.restore();
+        ctx.fillStyle = c(wg.fill || "panel");
+        ctx.fillRect(wg.x, wg.y, wg.w, wg.h);
+        ctx.strokeStyle = c(wg.stroke || "line");
+        ctx.strokeRect(wg.x + .5, wg.y + .5, wg.w - 1, wg.h - 1);
+        ctx.fillStyle = c(wg.color || "accent");
+        ctx.font = font(wg.font, wg.size);
+        ctx.textBaseline = "top";
+        ctx.textAlign = "left";
+        ctx.fillText("DECODE CW  GPIO 4", wg.x + 4, wg.y + 2);
+        ctx.fillStyle = c("ok");
+        ctx.textAlign = "right";
+        ctx.fillText("RUN", wg.x + wg.w - 4, wg.y + 2);
+        ctx.textAlign = "left";
+        ctx.fillStyle = c("muted");
+        ctx.fillText("SIG", wg.x + 4, wg.y + 14);
+        ctx.fillStyle = c("track");
+        ctx.fillRect(wg.x + 26, wg.y + 16, wg.w - 30, 4);
+        ctx.fillStyle = c("ok");
+        ctx.fillRect(wg.x + 26, wg.y + 16, (wg.w - 30) * 0.6, 4);
+        ctx.fillStyle = c("fg");
+        ctx.fillText("....", wg.x + 4, wg.y + 26);
         break;
       }
       case "wifi": {
