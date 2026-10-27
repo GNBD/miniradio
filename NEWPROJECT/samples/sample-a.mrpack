@@ -1,0 +1,36 @@
+{
+  "format": "gnbd-mod-project",
+  "schemaVersion": 2,
+  "manifest": {
+    "name": "sample-a-rssi",
+    "version": "1.0.0",
+    "author": "MINI-radio",
+    "api": 1,
+    "license": "MIT",
+    "license_accepted": true,
+    "generator": "MINI-radio Modder Studio v1.0"
+  },
+  "target": {
+    "board": "ESP32-S3-N16R8",
+    "firmware": "GNBD ATS Mini"
+  },
+  "ui": { "bg": "bg", "items": [] },
+  "code": [],
+  "menu": null,
+  "settings": null,
+  "menuLayout": "v",
+  "settingsLayout": "v",
+  "meta": {},
+  "rules": [
+    {
+      "id": 1,
+      "when": { "type": "rssi_updated", "param": "" },
+      "if": [
+        { "type": "rssi_lt", "param": "15" }
+      ],
+      "do": [
+        { "type": "toast", "param": "WEAK SIGNAL" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MINI-radio Modder Studio v1.0</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">MINI&middot;radio <b>Modder</b> <span class="tag">v1.0</span></div>
+  <input id="projName" class="pname" value="my-radio" title="project name">
+  <span id="dirtyDot" class="dirtydot" title="저장 안 됨 — Download로 저장하세요">●</span>
+  <div class="tabs">
+    <button id="tabUI" class="tab on" data-mode="ui">UI</button>
+    <button id="tabMenu" class="tab" data-mode="menu">MENU</button>
+    <button id="tabSet" class="tab" data-mode="settings">SETTINGS</button>
+    <button id="tabLogic" class="tab" data-mode="logic">BLOCKS</button>
+    <button id="tabCode" class="tab" data-mode="code">C</button>
+  </div>
+  <label class="chk"><input type="checkbox" id="previewChk"> Preview</label>
+  <label class="chk"><input type="checkbox" id="gridChk" checked> Snap</label>
+  <select id="gridSize" class="sel" title="스냅 간격">
+    <option value="1">1px</option><option value="2">2px</option>
+    <option value="4">4px</option><option value="8" selected>8px</option>
+    <option value="10">10px</option>
+  </select>
+  <span class="sp"></span>
+  <button id="btnUndo" class="btn">Undo</button>
+  <button id="btnNew" class="btn">New</button>
+  <button id="btnImport" class="btn">Import</button>
+  <button id="btnExport" class="btn primary" title="프로젝트 파일 다운로드">Download .mrpack</button>
+  <button id="btnExportC" class="btn soft" title="main/ui_custom_layout.h 다운로드">Download C</button>
+  <input type="file" id="fileIn" accept=".json,.mrpack" hidden>
+</header>
+
+<main class="wrap">
+  <aside class="palette" id="palette">
+    <div class="psearch"><input id="search" placeholder="모듈 검색..."></div>
+    <div id="paletteBody"></div>
+  </aside>
+
+  <section class="stage" id="stage">
+    <div class="stageui" id="stageUI">
+      <div class="aligntools">
+        <span class="lb">ALIGN</span>
+        <button class="tb" data-align="left" title="왼쪽 맞춤">L</button>
+        <button class="tb" data-align="hcenter" title="가로 가운데">C</button>
+        <button class="tb" data-align="right" title="오른쪽 맞춤">R</button>
+        <span class="sp2"></span>
+        <button class="tb" data-align="top" title="위쪽 맞춤">T</button>
+        <button class="tb" data-align="vcenter" title="세로 가운데">M</button>
+        <button class="tb" data-align="bottom" title="아래쪽 맞춤">B</button>
+        <span class="sp2"></span>
+        <button class="tb" data-align="width" title="같은 너비">W=</button>
+        <button class="tb" data-align="height" title="같은 높이">H=</button>
+        <span class="sp2"></span>
+        <button class="tb" data-align="disth" title="가로 균등 분배">⇹</button>
+        <button class="tb" data-align="distv" title="세로 균등 분배">⇳</button>
+        <span class="sp2"></span>
+        <span class="lb">MODE</span>
+        <button class="tb pmode on" data-pmode="0" title="FM 레이아웃 편집">FM</button>
+        <button class="tb pmode" data-pmode="1" title="AM 레이아웃 편집">AM</button>
+        <button class="tb pmode" data-pmode="2" title="SSB 레이아웃 편집">SSB</button>
+        <span class="sp2"></span>
+        <label class="chk"><input type="checkbox" id="hideGuidesChk"> Hide guides</label>
+        <span class="sp2"></span>
+        <span class="lb" id="selInfo">0 selected</span>
+      </div>
+      <div class="canvasBox">
+        <canvas id="screen" width="640" height="340"></canvas>
+        <div class="hintbar" id="hud">FM/AM/SSB는 각각 별도 레이아웃 · 드래그로 배치 · Delete 삭제</div>
+      </div>
+    </div>
+    <div class="stagelogic" id="stageLogic" hidden>
+      <div class="logicbar">
+        <button id="btnAddRule" class="btn primary">+ Rule</button>
+        <button id="btnSampleA" class="btn soft" title="RSSI 임계값 → 토스트 예제">Sample A</button>
+        <button id="btnSampleUi" class="btn soft" title="메뉴 SCAN → SEEK 예제">Sample UI</button>
+        <button id="btnModValidate" class="btn">Validate</button>
+        <button id="btnModGen" class="btn primary" title="mod_generated.h 다운로드">Generate mod</button>
+        <span class="hint">WHEN / IF / DO 칸에 블록을 끌어다 놓으세요</span>
+      </div>
+      <div id="modErrors" class="moderrors"></div>
+      <div id="rules" class="rules"></div>
+    </div>
+    <div class="stagemanu" id="stageMenu" hidden>
+      <div class="logicbar">
+        <button id="btnMenuDl" class="btn soft">Download menu_data.c</button>
+        <button id="btnMenuRestore" class="btn" title="삭제된 기본 메뉴 항목 복구">Restore</button>
+        <select id="menuLayoutSel" class="sel" title="메뉴 배치"><option value="v">세로</option><option value="h">가로</option></select>
+        <span class="hint">BACK은 고정 · 드래그로 순서 변경 · 라벨/표시 편집</span>
+      </div>
+      <div class="menuwrap">
+        <div id="menuList" class="menulist"></div>
+        <div class="menuprev">
+          <div class="mp-title">PREVIEW</div>
+          <div id="mpRows"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stagecode" id="stageCode" hidden>
+      <div class="codebar">
+        <input id="cmName" placeholder="name (VU)" />
+        <input id="cmGlyph" placeholder="glyph" class="narrow" />
+        <input id="cmFn" placeholder="vu_render" class="fn" />
+        <button id="btnCmNew" class="btn">+ Module</button>
+        <button id="btnCmDel" class="btn">Delete</button>
+        <span class="sp"></span>
+        <button id="btnCmSave" class="btn primary">Save module</button>
+      </div>
+      <textarea id="cmCode" class="code" spellcheck="false"></textarea>
+      <div class="hint">void &lt;fn&gt;(int x, int y, int w, int h) 형식.
+        display_* API 사용 가능. 저장하면 팔레트 CUSTOM (C)에 추가됩니다.</div>
+    </div>
+    <div class="stagemanu" id="stageSet" hidden>
+      <div class="logicbar">
+        <button id="btnSetDl" class="btn soft">Download settings_data.c</button>
+        <button id="btnSetRestore" class="btn" title="삭제된 기본 설정 항목 복구">Restore</button>
+        <select id="setLayoutSel" class="sel" title="메뉴 배치"><option value="v">세로</option><option value="h">가로</option></select>
+        <span class="hint">BACK은 고정 · 드래그로 순서 변경 · 라벨/표시 편집</span>
+      </div>
+      <div class="menuwrap">
+        <div id="setList" class="menulist"></div>
+        <div class="menuprev">
+          <div class="mp-title">PREVIEW</div>
+          <div id="spRows"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="props" id="props">
+    <div class="ptitle">LAYERS</div>
+    <div id="layersBody" class="layers"></div>
+    <div class="ptitle">Properties</div>
+    <div id="propsBody" class="pbody"></div>
+  </aside>
+
+  <div id="tip" class="tip" hidden>
+    <canvas id="tipCanvas" width="640" height="340"></canvas>
+    <div class="tt"><b id="tipName"></b><span id="tipSub"></span></div>
+  </div>
+</main>
+
+<script src="js/catalog.js?v=12"></script>
+<script src="js/core/schema.js?v=12"></script>
+<script src="js/core/project.js?v=12"></script>
+<script src="js/core/validate.js?v=12"></script>
+<script src="js/core/ir.js?v=12"></script>
+<script src="js/core/cgen.js?v=12"></script>
+<script src="js/core/menu_c.js?v=12"></script>
+<script src="js/core/layout_c.js?v=12"></script>
+<script src="js/render.js?v=12"></script>
+<script src="js/editor.js?v=12"></script>
+<script src="js/blocks.js?v=12"></script>
+<script src="js/menu.js?v=12"></script>
+<script src="js/properties.js?v=12"></script>
+<script src="js/palette.js?v=12"></script>
+<script src="js/code.js?v=12"></script>
+<script src="js/cpreview.js?v=12"></script>
+<script src="js/layers.js?v=12"></script>
+<script src="js/export.js?v=12"></script>
+<script src="js/modout.js?v=12"></script>
+<script src="js/app.js?v=12"></script>
+</body>
+</html>

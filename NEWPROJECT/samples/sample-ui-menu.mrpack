@@ -1,0 +1,189 @@
+{
+  "format": "gnbd-mod-project",
+  "schemaVersion": 2,
+  "manifest": {
+    "name": "sample-ui-menu",
+    "version": "1.0.0",
+    "author": "MINI-radio",
+    "api": 1,
+    "license": "MIT",
+    "license_accepted": true,
+    "generator": "MINI-radio Modder Studio v1.0"
+  },
+  "target": {
+    "board": "ESP32-S3-N16R8",
+    "firmware": "GNBD ATS Mini"
+  },
+  "ui": {
+    "bg": "bg",
+    "items": []
+  },
+  "code": [],
+  "menu": [
+    {
+      "id": "RM_BACK",
+      "label": "< BACK",
+      "visible": 1
+    },
+    {
+      "id": "RM_BAND",
+      "label": "BAND",
+      "visible": 1
+    },
+    {
+      "id": "RM_MODE",
+      "label": "MODE",
+      "visible": 1
+    },
+    {
+      "id": "RM_STEP",
+      "label": "STEP",
+      "visible": 1
+    },
+    {
+      "id": "RM_BW",
+      "label": "BW",
+      "visible": 1
+    },
+    {
+      "id": "RM_BFO",
+      "label": "BFO",
+      "visible": 1
+    },
+    {
+      "id": "RM_SEEK",
+      "label": "SEEK",
+      "visible": 1
+    },
+    {
+      "id": "RM_SCAN",
+      "label": "SCAN",
+      "visible": 1
+    },
+    {
+      "id": "RM_ATS",
+      "label": "ATS",
+      "visible": 1
+    },
+    {
+      "id": "RM_FAV",
+      "label": "FAVORITES",
+      "visible": 1
+    },
+    {
+      "id": "RM_RDS",
+      "label": "RDS",
+      "visible": 1
+    },
+    {
+      "id": "RM_STEREO",
+      "label": "STEREO",
+      "visible": 1
+    },
+    {
+      "id": "RM_DEEMPH",
+      "label": "DEEMPH",
+      "visible": 1
+    },
+    {
+      "id": "RM_VOLUME",
+      "label": "VOLUME",
+      "visible": 1
+    },
+    {
+      "id": "RM_AGC",
+      "label": "AGC",
+      "visible": 1
+    },
+    {
+      "id": "RM_RFGAIN",
+      "label": "RF GAIN",
+      "visible": 1
+    },
+    {
+      "id": "RM_AVC",
+      "label": "AVC",
+      "visible": 1
+    },
+    {
+      "id": "RM_SOFTMUTE",
+      "label": "SOFTMUTE",
+      "visible": 1
+    },
+    {
+      "id": "RM_SQUELCH",
+      "label": "SQUELCH",
+      "visible": 1
+    },
+    {
+      "id": "RM_MOD_A",
+      "label": "MOD SCAN",
+      "visible": 1
+    },
+    {
+      "id": "RM_MOD_B",
+      "label": "MOD B",
+      "visible": 0
+    },
+    {
+      "id": "RM_MOD_C",
+      "label": "MOD C",
+      "visible": 0
+    },
+    {
+      "id": "RM_MOD_D",
+      "label": "MOD D",
+      "visible": 0
+    },
+    {
+      "id": "RM_MOD_E",
+      "label": "MOD E",
+      "visible": 0
+    },
+    {
+      "id": "RM_MOD_F",
+      "label": "MOD F",
+      "visible": 0
+    },
+    {
+      "id": "RM_MOD_G",
+      "label": "MOD G",
+      "visible": 0
+    },
+    {
+      "id": "RM_MOD_H",
+      "label": "MOD H",
+      "visible": 0
+    },
+    {
+      "id": "RM_SETTINGS",
+      "label": "SETTINGS",
+      "visible": 1
+    }
+  ],
+  "settings": null,
+  "menuLayout": "v",
+  "settingsLayout": "v",
+  "meta": {},
+  "rules": [
+    {
+      "id": 1,
+      "when": {
+        "type": "ui_menu",
+        "param": "RM_MOD_A"
+      },
+      "if": [
+        {
+          "type": "seek_ok",
+          "param": ""
+        }
+      ],
+      "do": [
+        {
+          "type": "seek",
+          "param": ""
+        }
+      ]
+    }
+  ]
+}

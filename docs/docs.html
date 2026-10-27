@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GNBD MINI-radio · UI Editor Docs</title>
+<style>
+:root{
+  --bg:#f6f7fb; --card:#fff; --ink:#111827; --muted:#667085; --line:#e4e7ec;
+  --accent:#0072de; --orange:#f79009; --orange-soft:#fff4e5;
+  --chip:#f2f4f7; --ok:#12b76a; --danger:#d92d20;
+  --code-bg:#0d1117; --code-ink:#e6edf3;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+  --mono:"DejaVu Sans Mono",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.75 system-ui,-apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,kbd{font-family:var(--mono);font-size:12.5px}
+kbd{background:#fff;border:1px solid var(--line);border-bottom-width:2px;
+  border-radius:6px;padding:1px 6px;font-size:11.5px}
+
+.topwarn{background:linear-gradient(135deg,#ffcf3f,#f5a800);color:#241a00;text-align:center;padding:10px 16px;
+  font-size:12.5px;line-height:1.55;letter-spacing:-.1px}
+.topwarn b{display:block;font-size:13.5px;margin-bottom:2px}
+.topwarn .ko,.topwarn .en{display:inline}
+body[data-lang="ko"] .topwarn .en{display:none}
+body[data-lang="en"] .topwarn .ko{display:none}
+/* ---------- top ---------- */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;
+  padding:10px 18px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-size:16px;font-weight:800;letter-spacing:-.2px}
+.brand b{color:var(--accent)}
+.brand small{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0}
+.spacer{flex:1}
+.langbtns{display:flex;gap:4px;background:var(--chip);border-radius:10px;padding:3px}
+.langbtns button{border:0;background:transparent;border-radius:8px;padding:5px 10px;
+  font:inherit;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer}
+.langbtns button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+
+/* ---------- layout ---------- */
+.shell{display:grid;grid-template-columns:260px minmax(0,1fr);gap:22px;
+  max-width:1180px;margin:22px auto 60px;padding:0 18px}
+nav.toc{position:sticky;top:74px;align-self:start;max-height:calc(100vh - 100px);
+  overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:14px;box-shadow:var(--shadow)}
+nav.toc h4{margin:0 0 8px;font-size:11px;letter-spacing:.08em;color:var(--muted)}
+nav.toc ol{margin:0;padding-left:18px;font-size:12.5px;line-height:1.9}
+nav.toc a{color:#344054}
+nav.toc ol ol{font-size:11.5px;line-height:1.8;color:var(--muted)}
+main{min-width:0}
+section.card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:22px 24px;margin-bottom:18px;box-shadow:var(--shadow)}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.4px}
+h2{font-size:20px;margin:0 0 4px;letter-spacing:-.3px;scroll-margin-top:80px}
+h2 small{font-size:12px;font-weight:600;color:var(--muted);margin-left:6px;letter-spacing:0}
+h3{font-size:15px;margin:20px 0 6px;scroll-margin-top:80px}
+h4{font-size:13px;margin:14px 0 4px;color:#344054}
+p{margin:8px 0}
+.lead{font-size:14.5px;color:#344054}
+.sub{color:var(--muted);font-size:12.5px}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+ul,ol{margin:8px 0 8px 20px;padding:0}
+li{margin:3px 0}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;
+  padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--muted);
+  vertical-align:2px;margin-left:6px}
+.tag.b{background:#e8f1fd;color:#0057ad}
+.tag.o{background:var(--orange-soft);color:#a15c00}
+.tag.g{background:#e7f8ef;color:#067647}
+
+/* bilingual blocks */
+.ko,.en{color:inherit}
+body[data-lang="ko"] .en{display:none}
+body[data-lang="en"] .ko{display:none}
+
+/* tables */
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:#fafbfd;font-size:11.5px;letter-spacing:.03em;color:var(--muted);
+  font-weight:800;text-transform:uppercase}
+tbody tr:hover{background:#fcfdff}
+td code{background:var(--chip);border-radius:5px;padding:1px 5px}
+
+/* code */
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:14px 16px;
+  overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.7}
+pre .c{color:#8b98a5}
+pre .k{color:#ffa657}
+
+/* callouts */
+.note,.warn,.tip{border-radius:12px;padding:12px 14px;margin:12px 0;font-size:13px}
+.beta{background:linear-gradient(135deg,#fff7ec,#fff1de);border:1px solid #ffd8a8;
+  border-radius:14px;padding:14px 16px;margin:14px 0 4px}
+.beta>b{display:block;font-size:13px;margin-bottom:6px;color:#a15c00}
+.beta p{margin:6px 0 0;font-size:12.5px;line-height:1.7;color:#4a3a24}
+.note{background:#eef4ff;border:1px solid #cfe0ff}
+.warn{background:#fff1f0;border:1px solid #ffd6d2}
+.tip{background:#effaf3;border:1px solid #c9f0d9}
+.note b,.warn b,.tip b{letter-spacing:.02em}
+
+/* figures */
+figure{margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:14px;
+  background:#fbfcfe}
+figure svg{display:block;width:100%;height:auto}
+figcaption{font-size:11.5px;color:var(--muted);margin-top:8px;text-align:center}
+.shot{display:block;margin:0 auto;width:320px;max-width:100%;image-rendering:pixelated;
+  border-radius:8px;border:1px solid var(--line);background:#000}
+
+/* glossary */
+dl.gloss{display:grid;grid-template-columns:170px minmax(0,1fr);gap:6px 16px;margin:10px 0}
+dl.gloss dt{font-weight:800;font-size:12.5px}
+dl.gloss dd{margin:0 0 8px;font-size:12.5px;color:#3f4a5a}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chips span{font-size:11.5px;background:var(--chip);border-radius:999px;padding:3px 10px;
+  color:#344054}
+
+/* responsive */
+@media (max-width:920px){
+  .shell{grid-template-columns:1fr}
+  nav.toc{position:static;max-height:none;order:-1}
+  section.card{padding:18px}
+}
+@media print{
+  .topbar,nav.toc{display:none}
+  .shell{display:block;max-width:none}
+  section.card{break-inside:avoid;box-shadow:none}
+  body{background:#fff}
+}
+</style>
+</head>
+<body data-lang="ko">
+
+<div class="topwarn">
+  <b class="ko">BETA · 베타 버전입니다 (모든 기능이 완성되지 않았습니다)</b>
+  <b class="en">BETA · beta software, not feature-complete</b>
+  <span class="ko">예고 없이 변경·제거될 수 있고, 버그나 기기 크래시가 발생할 수 있습니다.</span>
+  <span class="en">Features may change or be removed without notice; bugs or device crashes can occur.</span>
+</div>
+
+<div class="topbar">
+  <div class="brand"><b>GNBD</b> MINI·radio <span style="color:var(--muted);font-weight:600">UI Editor Docs</span>
+    <small>v0.1.0 beta · 320 × 170 runtime UI</small></div>
+  <div class="spacer"></div>
+  <div class="langbtns">
+    <button data-lang="ko" class="on">한국어</button>
+    <button data-lang="en">English</button>
+  </div>
+</div>
+
+<div class="shell">
+
+<nav class="toc">
+  <h4>CONTENTS</h4>
+  <ol>
+    <li><a href="#overview"><span class="ko">개요</span><span class="en">Overview</span></a></li>
+    <li><a href="#terms"><span class="ko">용어 정리</span><span class="en">Terms</span></a></li>
+    <li><a href="#start"><span class="ko">시작하기</span><span class="en">Getting started</span></a></li>
+    <li><a href="#anatomy"><span class="ko">화면 구조</span><span class="en">Anatomy</span></a></li>
+    <li><a href="#layouts"><span class="ko">레이아웃</span><span class="en">Layouts</span></a></li>
+    <li><a href="#canvas"><span class="ko">캔버스</span><span class="en">Canvas</span></a>
+      <ol>
+        <li><a href="#select"><span class="ko">선택</span><span class="en">Selection</span></a></li>
+        <li><a href="#resize"><span class="ko">크기조절</span><span class="en">Resize</span></a></li>
+        <li><a href="#guides"><span class="ko">정렬 가이드</span><span class="en">Guides</span></a></li>
+        <li><a href="#zoom"><span class="ko">확대/축소</span><span class="en">Zoom</span></a></li>
+        <li><a href="#keys"><span class="ko">단축키</span><span class="en">Keys</span></a></li>
+      </ol>
+    </li>
+    <li><a href="#modules"><span class="ko">모듈</span><span class="en">Modules</span></a></li>
+    <li><a href="#prims"><span class="ko">프리미티브</span><span class="en">Primitives</span></a></li>
+    <li><a href="#templates"><span class="ko">템플릿</span><span class="en">Templates</span></a></li>
+    <li><a href="#props"><span class="ko">속성</span><span class="en">Properties</span></a></li>
+    <li><a href="#colors"><span class="ko">색상</span><span class="en">Colors</span></a></li>
+    <li><a href="#panel"><span class="ko">MENU/SETTINGS 패널</span><span class="en">Menu panel</span></a></li>
+    <li><a href="#bindings"><span class="ko">바인딩</span><span class="en">Bindings</span></a></li>
+    <li><a href="#save"><span class="ko">저장/불러오기</span><span class="en">Save &amp; Load</span></a></li>
+    <li><a href="#theme"><span class="ko">테마 연동</span><span class="en">Themes</span></a></li>
+    <li><a href="#format"><span class="ko">파일 포맷</span><span class="en">Runtime format</span></a></li>
+    <li><a href="#i18n"><span class="ko">언어</span><span class="en">Language</span></a></li>
+    <li><a href="#limits"><span class="ko">제한</span><span class="en">Limits</span></a></li>
+    <li><a href="#faq"><span class="ko">FAQ</span><span class="en">FAQ</span></a></li>
+    <li><a href="#license"><span class="ko">라이선스</span><span class="en">License</span></a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section class="card" id="top">
+  <h1>GNBD MINI·radio UI Editor <span class="tag o">v0.1.0 beta</span></h1>
+  <p class="lead ko">브라우저에서 320 × 170 라디오 화면을 직접 그리고, 저장하는 순간 기기에 적용되는 런타임 UI 에디터입니다.</p>
+  <p class="lead en">A runtime UI editor for the 320 × 170 radio screen — design in the browser and the radio picks it up the moment you save.</p>
+  <div class="beta">
+    <b>아직 부족한 점 <span class="tag o">WIP</span></b>
+    <p class="ko">기능이 많이 부족하고 미흡한 부분이 많습니다. 일부 기능은 동작하지 않거나
+      의도와 다르게 보일 수 있습니다. 중요한 레이아웃은 반드시 <b>다운로드</b>로 백업해 두세요.</p>
+    <p class="en">Many features are still missing and there are rough edges. Some functions may
+      not work or may look wrong. Always keep a <b>download</b> backup of important layouts.</p>
+  </div>
+  <div class="note">
+    <span class="ko"><b>접속</b> · 허브 <code>http://&lt;radio-ip&gt;/</code>에서 <b>UI Editor</b>를 선택하거나 <code>/ui/</code>로 바로 들어갑니다.</span>
+    <span class="en"><b>Open</b> · go to <code>http://&lt;radio-ip&gt;/</code> and choose <b>UI Editor</b>, or open <code>/ui/</code> directly.</span>
+  </div>
+</section>
+
+<!-- ============================= 1 ============================= -->
+<section class="card" id="overview">
+  <h2><span class="ko">1. 개요</span><span class="en">1. Overview</span></h2>
+  <div class="ko">
+    <p>이 에디터는 <b>펌웨어가 그리는 화면을 데이터로 정의</b>합니다. 화면에 놓은 요소(위젯)는
+      좌표·크기·색·바인딩을 가지며, 저장하면 기기 LittleFS에 텍스트 레이아웃으로 기록되어
+      다음 프레임부터 곧바로 반영됩니다. 재부팅도, 펌웨어 재빌드도 필요 없습니다.</p>
+    <ul>
+      <li>FM / AM / SSB <b>각각 별도 레이아웃</b></li>
+      <li>모든 변경은 <b>기기 저장 즉시</b> 반영</li>
+      <li>테마(색상)도 같은 파일에 포함되어 함께 적용</li>
+      <li>마음에 안 들면 <b>UI List</b>에서 이전 레이아웃으로 되돌리기</li>
+    </ul>
+    <div class="warn"><b>참고:</b> 에디터가 다루는 것은 <b>화면 구성</b>뿐입니다. 볼륨·밴드·스캔처럼
+      실제 동작은 기기의 MENU/SETTINGS에서 조작합니다.</div>
+  </div>
+  <div class="en">
+    <p>The editor describes the firmware-drawn screen as data. Each widget carries a position,
+      size, color and binding; saving writes a text layout to the radio's LittleFS and the very
+      next frame uses it. No reboot, no firmware rebuild.</p>
+    <ul>
+      <li>FM / AM / SSB have <b>independent layouts</b></li>
+      <li>Changes apply <b>immediately after saving</b></li>
+      <li>Theme colors are stored in the same file</li>
+      <li>Roll back anytime with <b>UI List</b></li>
+    </ul>
+    <div class="warn"><b>Note:</b> the editor only controls appearance. Radio behaviour
+      (volume, band, scanning) is still handled by the device's MENU/SETTINGS.</div>
+  </div>
+</section>
+
+<!-- ============================= 2 ============================= -->
+<section class="card" id="terms">
+  <h2><span class="ko">2. 용어 정리</span><span class="en">2. Terminology</span></h2>
+  <p class="sub">문서 전체에서 같은 뜻으로 사용합니다. / Used consistently across this document.</p>
+
+  <dl class="gloss">
+    <dt>캔버스 <small>Canvas</small></dt>
+    <dd>실제 기기 화면과 1:1로 대응하는 320 × 170 편집 영역. 화면에는 2배(640 × 340)로 그려집니다.<br>
+      The 320 × 170 editing area that maps 1:1 to the device. Drawn at 2× (640 × 340).</dd>
+
+    <dt>위젯 <small>Widget</small></dt>
+    <dd>화면에 그려지는 최소 단위. 타입(<code>text</code>, <code>bar</code>, <code>freq</code> …),
+      좌표, 크기, 색, 정렬, 바인딩을 가집니다.<br>
+      The smallest drawable unit: type, position, size, color, alignment, binding.</dd>
+
+    <dt>모듈 <small>Module</small></dt>
+    <dd>여러 위젯을 묶은 <b>재사용 블록</b>. 팔레트에서 끌어다 놓으면 위젯 세트가 한 번에 배치됩니다.<br>
+      A reusable block of widgets placed from the palette in one drop.</dd>
+
+    <dt>프리미티브 <small>Primitive</small></dt>
+    <dd>가장 단순한 모듈 묶음(텍스트, 바, 사각형, 선, 토스트, 시그널 아이콘).<br>
+      The basic building blocks (text, bar, rect, line, toast, signal icon).</dd>
+
+    <dt>레이아웃 <small>Layout</small></dt>
+    <dd>FM / AM / SSB 각각의 위젯 목록. 모드를 바꾸면 해당 레이아웃만 보입니다.<br>
+      The widget list for one mode. Switching mode swaps the visible list.</dd>
+
+    <dt>팔레트 <small>Palette</small></dt>
+    <dd>왼쪽의 모듈 목록. 드래그해서 캔버스에 놓습니다.<br>
+      The module list on the left, dragged onto the canvas.</dd>
+
+    <dt>바인딩 <small>Binding</small></dt>
+    <dd>위젯이 표시할 <b>펌웨어 값</b>의 이름(<code>clock</code>, <code>rssi</code>, <code>battv</code> …).<br>
+      The firmware value a widget displays.</dd>
+
+    <dt>스냅 <small>Snap</small></dt>
+    <dd>이동/크기조절 시 좌표를 일정 간격(기본 4 px)에 맞추는 기능.<br>
+      Rounding positions to a grid (4 px by default).</dd>
+
+    <dt>정렬 가이드 <small>Alignment guide</small></dt>
+    <dd>다른 위젯과 변/중심이 맞을 때 표시되는 빨간 점선. 4 px 이내면 자동 스냅.<br>
+      Red dashed lines shown when edges/centers align (auto-snap within 4 px).</dd>
+
+    <dt>런타임 레이아웃 <small>Runtime layout</small></dt>
+    <dd>기기 저장 공간에 들어가는 텍스트 파일(<code>UIR1</code>). 컴파일 없이 교체 가능.<br>
+      The text file (<code>UIR1</code>) stored on the device, replaceable without compiling.</dd>
+
+    <dt>테마 <small>Theme</small></dt>
+    <dd>펌웨어의 색상 세트. 커스텀 테마는 저장된 UI의 팔레트를 사용합니다.<br>
+      A firmware color set. Custom themes use a saved UI's palette.</dd>
+
+    <dt>프로젝트 파일 <small>Project</small></dt>
+    <dd><code>.mrpack</code> — 레이아웃 3종 + 팔레트 + 메타데이터를 담은 JSON. 백업/이동용.<br>
+      A JSON bundle of all layouts, palette and metadata for backup.</dd>
+  </dl>
+</section>
+
+<!-- ============================= 3 ============================= -->
+<section class="card" id="start">
+  <h2><span class="ko">3. 시작하기</span><span class="en">3. Getting started</span></h2>
+
+  <h3><span class="ko">3-1. 접속</span><span class="en">3-1. Connect</span></h3>
+  <div class="ko">
+    <ol>
+      <li>라디오와 같은 Wi-Fi에 연결합니다.</li>
+      <li>브라우저에서 <code>http://&lt;radio-ip&gt;/</code>를 엽니다 (예: <code>192.168.0.13</code>).</li>
+      <li>허브에서 <b>UI Editor</b> 카드를 누릅니다 (주소는 <code>/ui/</code>).</li>
+      <li>로딩 화면에 <b>GNBD MINI·radio / UI Editor / v0.1.0 beta</b>가 표시됩니다.</li>
+    </ol>
+  </div>
+  <div class="en">
+    <ol>
+      <li>Connect to the same Wi-Fi network as the radio.</li>
+      <li>Open <code>http://&lt;radio-ip&gt;/</code> in a browser.</li>
+      <li>Tap the <b>UI Editor</b> card (route <code>/ui/</code>).</li>
+      <li>The loading screen shows <b>GNBD MINI·radio / UI Editor / v0.1.0 beta</b>.</li>
+    </ol>
+  </div>
+
+  <h3><span class="ko">3-2. 화면 구성</span><span class="en">3-2. Layout of the editor</span></h3>
+  <table>
+    <thead><tr><th>영역 / Area</th><th>내용 / Contents</th></tr></thead>
+    <tbody>
+      <tr><td>상단 배너 / Banner</td><td>BETA 안내 · <code>자세한 내용</code>(이 문서) · 닫기(×, 기억됨)<br>Beta notice, docs link, dismiss (remembered)</td></tr>
+      <tr><td>상단바 / Top bar</td><td>프로젝트 이름, 미리보기, 스냅, 확대, 실행취소/다시 실행, 새로 만들기, 가져오기, 다운로드, 라디오에 저장, UI 목록, 언어</td></tr>
+      <tr><td>왼쪽 / Left</td><td>팔레트: 템플릿 → 화면 모듈 → 프리미티브 (검색 가능)</td></tr>
+      <tr><td>가운데 / Center</td><td>캔버스 + 정렬/레이아웃/확대 도구 + 힌트바</td></tr>
+      <tr><td>오른쪽 / Right</td><td>레이어 · 색상 · 속성</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="ko">3-3. 첫 저장</span><span class="en">3-3. First save</span></h3>
+  <div class="ko">
+    <p>팔레트에서 모듈을 끌어다 놓고 <b>라디오에 저장</b>을 누르면 이름 입력창이 뜹니다.
+      저장과 동시에 그 UI가 <b>활성화</b>되어 기기 화면이 바뀝니다.</p>
+    <div class="tip"><b>Tip:</b> 처음에는 <b>UI List</b>에서 기존 UI를 먼저 불러와
+      조금씩 고치는 편이 안전합니다. 기본 Default 템플릿은 실제 펌웨어 기본 화면과 같습니다.</div>
+  </div>
+  <div class="en">
+    <p>Drop a module, press <b>Save to radio</b>, enter a name. Saving also <b>activates</b>
+      the layout so the device screen updates immediately.</p>
+    <div class="tip"><b>Tip:</b> start by loading an existing layout from <b>UI List</b> and editing it.
+      The Default template mirrors the stock firmware screen.</div>
+  </div>
+</section>
+
+<!-- ============================= 4 ============================= -->
+<section class="card" id="anatomy">
+  <h2><span class="ko">4. 화면 구조</span><span class="en">4. Screen anatomy</span></h2>
+  <div class="ko">
+    <p>기기 화면은 320 × 170 px입니다. 아래는 Default 템플릿 기준 배치입니다.</p>
+  </div>
+  <div class="en"><p>The device screen is 320 × 170 px. Below is the Default template layout.</p></div>
+
+  <figure>
+    <svg viewBox="0 0 640 400" role="img" aria-label="screen anatomy">
+      <rect x="1" y="1" width="638" height="398" rx="10" fill="#0b0f14" stroke="#29313a"/>
+      <!-- header -->
+      <rect x="20" y="26" width="600" height="44" fill="#191821" stroke="#3a4350" stroke-dasharray="4 3"/>
+      <rect x="32" y="38" width="6" height="20" fill="#0886ff"/>
+      <text x="46" y="56" fill="#f7f3f7" font-family="monospace" font-size="18">22:29</text>
+      <text x="330" y="56" fill="#667085" font-family="monospace" font-size="13">SIGNAL</text>
+      <text x="400" y="56" fill="#667085" font-family="monospace" font-size="13">STA</text>
+      <text x="452" y="56" fill="#667085" font-family="monospace" font-size="13">4.41V</text>
+      <rect x="556" y="42" width="48" height="16" fill="#12b76a"/>
+      <text x="24" y="22" fill="#f79009" font-family="monospace" font-size="11">HEADER  y=0 h=22</text>
+
+      <!-- band row -->
+      <text x="24" y="92" fill="#8c8e9c" font-family="monospace" font-size="13">VHF FM</text>
+      <text x="120" y="92" fill="#31d25a" font-family="monospace" font-size="11">ST</text>
+      <text x="430" y="92" fill="#8c8e9c" font-family="monospace" font-size="12">VOL 15  BRT 50</text>
+      <text x="24" y="112" fill="#f79009" font-family="monospace" font-size="11">BAND + MODE  y=24</text>
+
+      <!-- freq -->
+      <text x="22" y="160" fill="#f7f3f7" font-family="monospace" font-size="44">103.50</text>
+      <text x="242" y="160" fill="#8c8e9c" font-family="monospace" font-size="16">MHz</text>
+      <text x="24" y="186" fill="#f79009" font-family="monospace" font-size="11">FREQUENCY  y=40 h=32</text>
+      <rect x="18" y="70" width="404" height="66" fill="none" stroke="#0886ff" stroke-dasharray="4 3"/>
+
+      <!-- rsq -->
+      <rect x="22" y="204" width="150" height="20" rx="6" fill="#0b0f14" stroke="#29313a"/>
+      <rect x="22" y="204" width="96" height="20" rx="6" fill="#31d25a"/>
+      <text x="196" y="220" fill="#f7f3f7" font-family="monospace" font-size="18">34</text>
+      <rect x="22" y="236" width="150" height="12" rx="6" fill="#0b0f14" stroke="#29313a"/>
+      <rect x="22" y="236" width="34" height="12" rx="6" fill="#ff453a"/>
+      <text x="196" y="248" fill="#f7f3f7" font-family="monospace" font-size="18">7</text>
+      <text x="24" y="272" fill="#f79009" font-family="monospace" font-size="11">RSSI / SNR  y=72 h=44</text>
+
+      <!-- params -->
+      <text x="400" y="196" fill="#8c8e9c" font-family="monospace" font-size="11">BW AUTO  ST 100K</text>
+      <text x="400" y="216" fill="#8c8e9c" font-family="monospace" font-size="11">BFO +0  AGC ON  SM 4</text>
+      <text x="400" y="236" fill="#8c8e9c" font-family="monospace" font-size="11">AFC OK  AVC 63  SQ OFF</text>
+      <text x="400" y="258" fill="#f79009" font-family="monospace" font-size="11">PARAMS  y=74/90/106</text>
+
+      <!-- info + sig -->
+      <rect x="20" y="286" width="360" height="86" fill="#101419" stroke="#29313a"/>
+      <text x="32" y="304" fill="#19db94" font-family="monospace" font-size="11">RDS</text>
+      <text x="316" y="304" fill="#8c8e9c" font-family="monospace" font-size="10">Varied</text>
+      <text x="32" y="326" fill="#f7f3f7" font-family="monospace" font-size="12">KBS 1FM</text>
+      <text x="32" y="346" fill="#8c8e9c" font-family="monospace" font-size="10">뉴스와 음악, 그리고 사람</text>
+      <text x="24" y="384" fill="#f79009" font-family="monospace" font-size="11">INFO CARD  y=122 h=46</text>
+
+      <rect x="396" y="286" width="184" height="86" fill="#101419" stroke="#29313a"/>
+      <polyline points="404,350 424,344 444,352 464,336 484,342 504,328 524,334 544,320 564,326"
+        fill="none" stroke="#31d25a" stroke-width="2"/>
+      <polyline points="404,362 424,358 444,364 464,356 484,360 504,352 524,356 544,350 564,348"
+        fill="none" stroke="#0886ff" stroke-width="2"/>
+      <text x="400" y="384" fill="#f79009" font-family="monospace" font-size="11">SIG  y=122 h=46</text>
+    </svg>
+    <figcaption>그림 1. Default 템플릿의 영역별 좌표 / Fig 1. Default template regions</figcaption>
+  </figure>
+
+  <h3><span class="ko">4-1. 실제 화면</span><span class="en">4-1. Actual screen</span></h3>
+  <img class="shot" src="data:image/png;base64,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" alt="device screenshot">
+  <p class="sub" style="text-align:center">기기 스크린샷 (예시) / Device screenshot (example)</p>
+
+  <h3><span class="ko">4-2. 좌표 규칙</span><span class="en">4-2. Coordinate rules</span></h3>
+  <ul>
+    <li>원점 <code>(0,0)</code>은 <b>왼쪽 위</b>, x는 오른쪽, y는 아래로 증가 / origin is top-left</li>
+    <li>화면 밖 좌표도 저장은 되지만 잘려 보입니다 / off-screen widgets are clipped</li>
+    <li>정렬 <code>l/c/r</code>은 <b>위젯 박스 기준</b>이므로 <code>r</code>은 글자 끝이 박스 오른쪽에 붙습니다 / alignment is relative to the widget box</li>
+  </ul>
+  <div class="warn"><b>좌표가 안 맞게 보이는 이유 / Why text looks misaligned:</b>
+    <div class="ko">오른쪽 정렬(<code>r</code>)은 위젯의 <b>오른쪽 끝</b>이 기준입니다. 드래그한 위치는
+      왼쪽 끝이므로, 같은 좌표라도 글자가 왼쪽으로 밀려 보입니다. 대부분 <b>왼쪽 정렬</b>로 바꾸면 해결됩니다.</div>
+    <div class="en">Right alignment anchors the <b>right edge</b> of the widget box, while you drag the
+      left edge. Switching to <b>left alignment</b> makes the drag position match the text.</div>
+  </div>
+</section>
+
+<!-- ============================= 5 ============================= -->
+<section class="card" id="layouts">
+  <h2><span class="ko">5. 레이아웃 모드</span><span class="en">5. Layout modes</span></h2>
+  <div class="ko">
+    <p>FM / AM / SSB는 <b>완전히 별개의 레이아웃</b>입니다. 탭을 바꾸면 캔버스 내용과 레이어 목록이
+      모두 교체됩니다. 한 모드에서 지운 위젯은 다른 모드에 영향을 주지 않습니다.</p>
+    <ul>
+      <li>각 레이아웃은 저장 시 하나의 파일에 함께 기록됩니다.</li>
+      <li>위젯별 <b>모드 제한</b>도 가능합니다(속성의 <code>modes</code> 값, 1=FM 2=AM 4=SSB).</li>
+      <li>기본 화면 위에 <b>현재 모드 마스크</b>와 맞는 위젯만 그려집니다.</li>
+    </ul>
+  </div>
+  <div class="en">
+    <p>FM / AM / SSB are <b>separate layouts</b>. Changing the tab swaps both the canvas and the
+      layer list. Deleting a widget in one mode does not touch the others.</p>
+    <ul>
+      <li>All three layouts are saved into one file.</li>
+      <li>Widgets can be restricted by mode mask (1=FM, 2=AM, 4=SSB).</li>
+      <li>Only widgets matching the current mode are drawn.</li>
+    </ul>
+  </div>
+  <table>
+    <thead><tr><th>모드 / Mode</th><th>마스크 / Mask</th><th>비고 / Note</th></tr></thead>
+    <tbody>
+      <tr><td>FM</td><td><code>1</code></td><td>RDS 카드 사용 / uses RDS card</td></tr>
+      <tr><td>AM</td><td><code>2</code></td><td>EiBi 카드 사용 / uses EiBi card</td></tr>
+      <tr><td>SSB (LSB/USB)</td><td><code>4</code></td><td>EiBi 카드 사용 / uses EiBi card</td></tr>
+      <tr><td>공통 / All</td><td><code>0</code> 또는 <code>7</code></td><td>모든 모드에 표시 / shown in all modes</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================= 6 ============================= -->
+<section class="card" id="canvas">
+  <h2><span class="ko">6. 캔버스 조작</span><span class="en">6. Canvas</span></h2>
+
+  <h3 id="select">6-1. 선택 <small>Selection</small></h3>
+  <ul>
+    <li>클릭: 선택 / click to select</li>
+    <li><kbd>Shift</kbd> + 클릭: 다중 선택 / multi-select</li>
+    <li>빈 곳 클릭: 선택 해제 / click empty space to deselect</li>
+    <li>선택된 위젯은 파란 실선, 나머지는 옅은 점선으로 표시 / selected = solid blue, others = faint dashed</li>
+  </ul>
+
+  <h3 id="resize">6-2. 크기조절 <small>Resize</small></h3>
+  <div class="ko">
+    <p>선택하면 <b>8개의 파란 핸들</b>이 나타납니다. 모서리 4개 + 변 4개이며,
+      어느 방향으로든 끌어서 크기를 바꿀 수 있습니다. 왼쪽/위쪽 핸들을 끌면 위치도 함께 이동합니다.</p>
+    <ul>
+      <li>최소 크기: 8 × 4 px</li>
+      <li>화면(320 × 170) 밖으로 나가지 않음</li>
+      <li>스냅이 켜져 있으면 4 px 단위</li>
+      <li>커서가 방향에 맞게 바뀜 (<code>↔ ↕ ⤡ ⤢</code>)</li>
+    </ul>
+  </div>
+  <div class="en">
+    <p>Selecting shows <b>8 blue handles</b> (4 corners + 4 edges). Drag any of them to resize;
+      left/top handles also move the widget.</p>
+    <ul>
+      <li>Minimum 8 × 4 px</li>
+      <li>Stays inside the 320 × 170 screen</li>
+      <li>4 px steps when Snap is on</li>
+      <li>Cursor changes per direction (<code>↔ ↕ ⤡ ⤢</code>)</li>
+    </ul>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 640 300" role="img" aria-label="resize handles">
+      <rect x="1" y="1" width="638" height="298" rx="10" fill="#0b0f14" stroke="#29313a"/>
+      <rect x="120" y="70" width="400" height="160" fill="none" stroke="#0072de" stroke-width="2"/>
+      <g fill="#0072de" stroke="#fff" stroke-width="1.5">
+        <rect x="112" y="62" width="16" height="16"/><rect x="312" y="62" width="16" height="16"/><rect x="512" y="62" width="16" height="16"/>
+        <rect x="112" y="142" width="16" height="16"/><rect x="512" y="142" width="16" height="16"/>
+        <rect x="112" y="222" width="16" height="16"/><rect x="312" y="222" width="16" height="16"/><rect x="512" y="222" width="16" height="16"/>
+      </g>
+      <text x="120" y="258" fill="#8c8e9c" font-family="monospace" font-size="12">8 handles · corners + edges</text>
+      <text x="120" y="50" fill="#f79009" font-family="monospace" font-size="12">drag any handle</text>
+    </svg>
+    <figcaption>그림 2. 8방향 핸들 / Fig 2. Eight resize handles</figcaption>
+  </figure>
+
+  <h3 id="guides">6-3. 정렬 가이드 <small>Alignment guides</small></h3>
+  <div class="ko">
+    <p>위젯을 이동하거나 팔레트에서 모듈을 끌어올 때, 다른 위젯의
+      <b>왼쪽·가운데·오른쪽</b> / <b>위·중간·아래</b>와 화면 중심에 4 px 이내로 접근하면
+      빨간 점선이 나타나고 자동으로 맞춰집니다.</p>
+    <ul>
+      <li>여러 위젯이 같은 축에 있으면 가이드가 여러 줄 표시됩니다.</li>
+      <li>드래그를 놓으면 가이드는 사라집니다.</li>
+      <li>크기조절 중에는 가이드가 표시되지 않습니다.</li>
+    </ul>
+  </div>
+  <div class="en">
+    <p>While moving a widget (or dragging from the palette), edges and centers snap to other
+      widgets and to the screen center within 4 px, with red dashed guides.</p>
+    <ul>
+      <li>Multiple guides appear when several widgets share the same axis.</li>
+      <li>Guides disappear on drop.</li>
+      <li>Guides are not shown while resizing.</li>
+    </ul>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 640 260" role="img" aria-label="alignment guides">
+      <rect x="1" y="1" width="638" height="258" rx="10" fill="#0b0f14" stroke="#29313a"/>
+      <rect x="80" y="60" width="200" height="60" fill="none" stroke="#29313a" stroke-dasharray="4 3"/>
+      <rect x="80" y="160" width="140" height="40" fill="none" stroke="#0072de"/>
+      <line x1="80" y1="10" x2="80" y2="250" stroke="#ff2d55" stroke-dasharray="6 4"/>
+      <line x1="420" y1="130" x2="420" y2="130" stroke="none"/>
+      <line x1="10" y1="120" x2="630" y2="120" stroke="#ff2d55" stroke-dasharray="6 4"/>
+      <text x="88" y="30" fill="#ff2d55" font-family="monospace" font-size="12">left edges aligned</text>
+      <text x="440" y="112" fill="#ff2d55" font-family="monospace" font-size="12">centers aligned</text>
+    </svg>
+    <figcaption>그림 3. 정렬 가이드 / Fig 3. Alignment guides</figcaption>
+  </figure>
+
+  <h3 id="zoom">6-4. 확대/축소 <small>Zoom</small></h3>
+  <ul>
+    <li>툴바의 <b>확대</b> 슬라이더: 50% ~ 200% / Zoom slider 50–200%</li>
+    <li>기준점 선택: <b>중앙</b> 또는 <b>좌상단</b> / anchor: center or top-left</li>
+    <li><kbd>Ctrl</kbd> + 마우스 휠로도 조절 / Ctrl + wheel</li>
+    <li>설정은 브라우저에 기억됩니다 / remembered in the browser</li>
+  </ul>
+  <div class="tip"><b>Tip:</b> 200%에서 미세 조정, 50%에서 전체 균형 확인 / fine-tune at 200%, check balance at 50%.</div>
+
+  <h3 id="keys">6-5. 단축키 <small>Keyboard</small></h3>
+  <table>
+    <thead><tr><th>키 / Key</th><th>동작 / Action</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Delete</kbd> / <kbd>Backspace</kbd></td><td>선택 삭제 / delete selection</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>복제 / duplicate</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>실행취소 / undo</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>다시 실행 / redo</td></tr>
+      <tr><td><kbd>←↑→↓</kbd></td><td>1 px 이동 / nudge 1 px</td></tr>
+      <tr><td><kbd>Shift</kbd>+화살표</td><td>8 px 이동 / nudge 8 px</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>선택 해제 / deselect</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+휠</td><td>확대/축소 / zoom</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================= 7 ============================= -->
+<section class="card" id="modules">
+  <h2><span class="ko">7. 모듈</span><span class="en">7. Screen modules</span></h2>
+  <div class="ko"><p>팔레트 <b>SCREEN MODULES</b> 그룹. 여러 위젯이 한 번에 배치됩니다.</p></div>
+  <div class="en"><p>Palette group <b>SCREEN MODULES</b>. Each module places several widgets at once.</p></div>
+
+  <div class="tip">
+    <b>색상 칸 읽는 법 / How to read the color column</b>
+    <p class="ko">오른쪽 <b>속성(Properties)</b>에서 바꿀 수 있는 팔레트 키입니다. 값은 아래 11번
+      <b>색상</b> 표의 슬롯과 같습니다. 굵게 표시된 키가 화면에서 가장 크게 보이는 색입니다.</p>
+    <p class="en">Palette keys you can change in <b>Properties</b>. They map to the slots in
+      section 11 (<b>Colors</b>). Bold keys dominate the look.</p>
+  </div>
+
+  <table>
+    <thead><tr><th>모듈 / Module</th><th>구성 / Contents</th><th>기본 크기 / Default</th><th>사용 색상 / Colors</th></tr></thead>
+    <tbody>
+      <tr><td><b>Header + Wi-Fi</b></td>
+        <td>시계, Wi-Fi 상태, 배터리 전압, 시그널 아이콘, 배터리 바<br>clock, Wi-Fi state, battery voltage, signal icon, battery bar</td>
+        <td>320 × 22</td>
+        <td><b>panel</b>(배경) · <b>accent</b>(좌측 바) · fg(시계) · muted(Wi-Fi/전압) · accenth(신호) · ok(배터리)</td></tr>
+      <tr><td><b>Band + Mode + ST</b></td>
+        <td>밴드명 · 모드 · 스테레오 표시<br>band, mode, stereo flag</td>
+        <td>104 × 12</td>
+        <td>muted(밴드/모드) · <b>ok</b>(ST)</td></tr>
+      <tr><td><b>Band + Mode</b></td>
+        <td>밴드명 · 모드<br>band and mode</td>
+        <td>60 × 12</td>
+        <td><b>muted</b></td></tr>
+      <tr><td><b>P / A badges</b></td>
+        <td>프리셋 번호 · ATS 번호 칩<br>preset and ATS chips</td>
+        <td>72 × 12</td>
+        <td><b>accent</b>(P) · <b>warn</b>(A) · 칩 배경은 각 색</td></tr>
+      <tr><td><b>Frequency</b></td>
+        <td>주파수 큰 숫자 + 단위<br>large frequency + unit</td>
+        <td>200 × 32</td>
+        <td><b>fg</b>(숫자) · muted(단위) — 고정 / fixed</td></tr>
+      <tr><td><b>RSSI / SNR</b></td>
+        <td>두 개의 바 + 숫자<br>two bars with numbers</td>
+        <td>176 × 44</td>
+        <td>track(바 배경) · <b>ok</b>(RSSI) · accent(SNR) · warn(SNR 낮음) · muted · fg</td></tr>
+      <tr><td><b>Param grid</b></td>
+        <td>BW/BFO/AGC 등 3줄<br>three parameter lines</td>
+        <td>122 × 42</td>
+        <td><b>muted</b></td></tr>
+      <tr><td><b>INFO card (RDS/EIBI)</b></td>
+        <td>FM은 RDS, AM/SSB는 EiBi<br>RDS in FM, EiBi otherwise</td>
+        <td>200 × 46</td>
+        <td><b>panel</b>(배경) · line(테두리) · <b>accenth</b>(RDS) · fg(PS) · muted(RT/PTY) · warn(EiBi)</td></tr>
+      <tr><td><b>SIG graph</b></td>
+        <td>RSSI/SNR 꺾은선 그래프<br>RSSI/SNR history graph</td>
+        <td>98 × 46</td>
+        <td><b>panel</b>(배경) · line(축) · track(중앙선) · <b>ok</b>(RSSI 선) · <b>accent</b>(SNR 선)</td></tr>
+      <tr><td><b>Band map</b></td>
+        <td>중앙 고정 다이얼 눈금<br>centered dial</td>
+        <td>304 × 46</td>
+        <td>line(테두리) · bg(칩) · <b>fg</b>(바늘) · muted(눈금) · accent(마커)</td></tr>
+      <tr><td><b>PANEL (MENU/SETTINGS)</b></td>
+        <td>메뉴/설정 패널 위치 가이드<br>menu panel placement guide</td>
+        <td>98 × 150</td>
+        <td>펌웨어가 그림 · <b>panel</b> · line · <b>hsel</b>(선택) · accenth(포커스 글자) · fg</td></tr>
+      <tr><td><b>VOL / BRT status</b></td>
+        <td>볼륨·밝기 상태 텍스트<br>volume / brightness text</td>
+        <td>84 × 10</td>
+        <td><b>muted</b></td></tr>
+    </tbody>
+  </table>
+
+  <h3>7-1. Signal icon <span class="tag g">NEW</span></h3>
+  <div class="ko">
+    <p>와이파이 신호 세기를 4칸 막대로 표시합니다. <b>어디에나</b> 놓을 수 있고 크기를 바꾸면
+      막대 굵기·간격·높이가 함께 비례해서 변합니다.</p>
+    <ul>
+      <li>AP 모드: 4칸 / AP mode: 4 bars</li>
+      <li>STA 모드: RSSI −55 이상 4칸, −65 이상 3칸, −75 이상 2칸, 그 이하 1칸</li>
+      <li>스캔 중: 4칸 / scanning: 4 bars</li>
+      <li>미연결: 표시 안 함 / disconnected: hidden</li>
+      <li>색상은 속성에서 변경 / color editable in Properties</li>
+    </ul>
+  </div>
+  <div class="en">
+    <p>Four-bar Wi-Fi level indicator. Place it <b>anywhere</b>; resizing scales bar width,
+      gap and height proportionally.</p>
+    <ul>
+      <li>AP: 4 bars</li>
+      <li>STA: RSSI ≥ −55 → 4, ≥ −65 → 3, ≥ −75 → 2, else 1</li>
+      <li>Scanning: 4 bars</li>
+      <li>Disconnected: hidden</li>
+      <li>Color is editable</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================= 8 ============================= -->
+<section class="card" id="prims">
+  <h2><span class="ko">8. 프리미티브</span><span class="en">8. Primitives</span></h2>
+  <table>
+    <thead><tr><th>이름 / Name</th><th>설명 / Description</th><th>사용 색상 / Colors</th></tr></thead>
+    <tbody>
+      <tr><td><b>Text</b></td><td>고정 문자열 또는 바인딩 값<br>literal text or a bound value</td>
+        <td><b>color</b> — 속성에서 선택 (기본 fg)</td></tr>
+      <tr><td><b>Bar</b></td><td>0..max 값을 막대로 표시<br>value bar with a max</td>
+        <td><b>color</b>(채움, 기본 ok) · track(배경)</td></tr>
+      <tr><td><b>Rect / Panel</b></td><td>배경/테두리 사각형, 모서리 반경 지원<br>filled/stroked rectangle with radius</td>
+        <td><b>fill</b>(기본 panel) · <b>stroke</b>(기본 line)</td></tr>
+      <tr><td><b>Line</b></td><td>구분선 (가로/세로)<br>divider line</td>
+        <td><b>color</b> (기본 line)</td></tr>
+      <tr><td><b>Toast</b></td><td>하단 안내 메시지 영역<br>bottom message area</td>
+        <td>panel(배경) · line(테두리) · <b>fg</b>(글자)</td></tr>
+      <tr><td><b>Signal icon</b></td><td>4칸 와이파이 신호<br>4-bar Wi-Fi signal</td>
+        <td><b>color</b> (기본 accenth)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================= 9 ============================= -->
+<section class="card" id="templates">
+  <h2><span class="ko">9. 템플릿</span><span class="en">9. Templates</span></h2>
+  <table>
+    <thead><tr><th>템플릿 / Template</th><th>설명 / Description</th></tr></thead>
+    <tbody>
+      <tr><td><b>Default (기본 UI)</b></td><td>펌웨어 기본 화면과 동일한 구성<br>mirrors the stock firmware screen</td></tr>
+      <tr><td><b>Radio + Band map</b></td><td>하단 전체 폭 밴드맵 버전<br>full-width band map at the bottom</td></tr>
+      <tr><td><b>Minimal</b></td><td>주파수 + RSSI/SNR만<br>frequency and RSSI/SNR only</td></tr>
+    </tbody>
+  </table>
+  <div class="warn"><b>주의 / Caution:</b>
+    <div class="ko">템플릿을 누르면 <b>현재 모드의 레이아웃이 즉시 교체</b>됩니다. 필요하면 먼저 <b>다운로드</b>로 백업하세요.</div>
+    <div class="en">Applying a template <b>replaces the current mode's layout immediately</b>. Export first if unsure.</div>
+  </div>
+</section>
+
+<!-- ============================= 10 ============================= -->
+<section class="card" id="props">
+  <h2><span class="ko">10. 속성</span><span class="en">10. Properties</span></h2>
+  <table>
+    <thead><tr><th>항목 / Field</th><th>의미 / Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><b>Type</b></td><td>위젯 타입(읽기 전용) / widget type (read only)</td></tr>
+      <tr><td><b>Name</b></td><td>레이어에 표시할 이름. 비우면 자동 이름<br>layer label; auto when empty</td></tr>
+      <tr><td><b>X / Y</b></td><td>왼쪽 위 좌표 / top-left position</td></tr>
+      <tr><td><b>W / H</b></td><td>크기 / size</td></tr>
+      <tr><td><b>Scale %</b></td><td>50–200, 글자/숫자 크기 배율<br>text and number scale</td></tr>
+      <tr><td><b>Hide</b></td><td>편집 중 숨김(저장 시 제외)<br>hidden in editor; excluded on save</td></tr>
+      <tr><td><b>Layer</b></td><td>그리기 순서. 위젯 목록에서 <b>아래가 앞</b><br>draw order; bottom of the list is front</td></tr>
+      <tr><td><b>Inherit</b></td><td>다른 위젯의 레이어를 그대로 따름<br>follow another widget's layer</td></tr>
+      <tr><td><b>Bind</b></td><td>표시할 값(바인딩)<br>value binding</td></tr>
+      <tr><td><b>Text</b></td><td>바인딩이 없을 때 표시할 문자열<br>literal when no binding</td></tr>
+      <tr><td><b>Size</b></td><td>tiny / small / large</td></tr>
+      <tr><td><b>Align</b></td><td>l / c / r — 위젯 박스 기준<br>left / center / right within the box</td></tr>
+      <tr><td><b>Color</b></td><td>팔레트 키 / palette key</td></tr>
+      <tr><td><b>Chip</b></td><td>텍스트 뒤 알약 배경<br>pill background behind text</td></tr>
+      <tr><td><b>Fill / Stroke / Radius</b></td><td>사각형 전용 / rect only</td></tr>
+      <tr><td><b>Max</b></td><td>Bar 전용 최댓값 / bar maximum</td></tr>
+      <tr><td><b>List / Layout</b></td><td>PANEL 전용: MENU/SETTINGS, 세로/가로<br>panel only: MENU/SETTINGS, vertical/horizontal</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>Scale</b>
+    <div class="ko">텍스트·주파수·RSSI/SNR 숫자에 실제로 적용됩니다. 배율이 커지면 위젯 박스 밖으로 나갈 수 있으니 W/H도 함께 키우세요.</div>
+    <div class="en">Applies to text, frequency and RSSI/SNR digits. Enlarge W/H too, otherwise scaled text overflows the box.</div>
+  </div>
+</section>
+
+<!-- ============================= 11 ============================= -->
+<section class="card" id="colors">
+  <h2><span class="ko">11. 색상</span><span class="en">11. Colors</span></h2>
+  <div class="ko">
+    <p>오른쪽 <b>색상</b> 패널에서 16개 슬롯을 편집합니다. 값은 저장 시 함께 기록되고
+      기기의 커스텀 테마에 적용됩니다.</p>
+  </div>
+  <div class="en">
+    <p>Edit the 16 slots in the <b>COLORS</b> panel. Values are saved with the layout and applied
+      to the radio's custom theme.</p>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>키 / Key</th><th>기본값(다크) / Default</th><th>용도 / Used for</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>bg</code></td><td>#080c10</td><td>화면 배경 / screen background</td></tr>
+      <tr><td>2</td><td><code>panel</code></td><td>#191821</td><td>헤더·카드 배경 / header and card</td></tr>
+      <tr><td>3</td><td><code>hl</code></td><td>#102842</td><td>강조 배경 / highlight</td></tr>
+      <tr><td>4</td><td><code>hsel</code></td><td>#19416b</td><td>선택된 항목 / selected item</td></tr>
+      <tr><td>5</td><td><code>cell</code></td><td>#101419</td><td>입력 셀 / cell</td></tr>
+      <tr><td>6</td><td><code>line</code></td><td>#29313a</td><td>테두리·구분선 / borders</td></tr>
+      <tr><td>7</td><td><code>track</code></td><td>#212831</td><td>바 배경 / bar track</td></tr>
+      <tr><td>8</td><td><code>fg</code></td><td>#f7f3f7</td><td>기본 글자 / primary text</td></tr>
+      <tr><td>9</td><td><code>muted</code></td><td>#8c8e9c</td><td>보조 글자 / secondary text</td></tr>
+      <tr><td>10</td><td><code>accent</code></td><td>#0886ff</td><td>포인트 / accent</td></tr>
+      <tr><td>11</td><td><code>accenth</code></td><td>#19db94</td><td>포인트 밝게 / accent hi</td></tr>
+      <tr><td>12</td><td><code>gold</code></td><td>#ff9e10</td><td>강조 숫자 / gold</td></tr>
+      <tr><td>13</td><td><code>ok</code></td><td>#31d25a</td><td>정상 / good</td></tr>
+      <tr><td>14</td><td><code>warn</code></td><td>#ff453a</td><td>경고 / warning</td></tr>
+      <tr><td>15</td><td><code>red</code></td><td>#ff0000</td><td>오류 / error</td></tr>
+      <tr><td>16</td><td><code>blue</code></td><td>#2128ff</td><td>파랑 / blue</td></tr>
+    </tbody>
+  </table>
+  <div class="tip"><b>Reset colors</b>
+    <div class="ko">색상 초기화는 위 <b>다크 기본값</b>으로 되돌립니다.</div>
+    <div class="en">Restores the dark defaults listed above.</div>
+  </div>
+</section>
+
+<!-- ============================= 12 ============================= -->
+<section class="card" id="panel">
+  <h2><span class="ko">12. MENU / SETTINGS 패널</span><span class="en">12. Menu panel</span></h2>
+  <div class="ko">
+    <p>라디오의 MENU / SETTINGS 화면이 나타나는 <b>위치와 방향</b>을 정하는 모듈입니다.
+      실제 항목 내용은 펌웨어가 그리며, 에디터에서는 위치·크기·방향만 설계합니다.</p>
+    <ul>
+      <li><b>List</b>: MENU 또는 SETTINGS</li>
+      <li><b>Layout</b>: 세로(기본 98 × 150) / 가로(자동 304 × 50)</li>
+      <li>가로 모드에서는 포커스가 끝에 닿을 때 <b>한 항목씩</b> 스크롤됩니다.</li>
+      <li>가로 패널은 하단에 현재 값이 표시됩니다.</li>
+    </ul>
+  </div>
+  <div class="en">
+    <p>Defines where and how the radio's MENU / SETTINGS overlay appears. The firmware draws the
+      actual items; the editor only sets position, size and orientation.</p>
+    <ul>
+      <li><b>List</b>: MENU or SETTINGS</li>
+      <li><b>Layout</b>: vertical (98 × 150) or horizontal (auto 304 × 50)</li>
+      <li>Horizontal mode scrolls <b>one item at a time</b> at the edges.</li>
+      <li>The current value is shown at the bottom of a horizontal panel.</li>
+    </ul>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 640 260" role="img" aria-label="menu panel">
+      <rect x="1" y="1" width="638" height="258" rx="10" fill="#0b0f14" stroke="#29313a"/>
+      <rect x="24" y="30" width="196" height="196" rx="8" fill="#191821" stroke="#0886ff" stroke-dasharray="4 3"/>
+      <text x="40" y="52" fill="#8c8e9c" font-family="monospace" font-size="11">MENU</text>
+      <rect x="36" y="62" width="172" height="22" rx="6" fill="#19416b"/>
+      <text x="46" y="78" fill="#19db94" font-family="monospace" font-size="11">BAND</text>
+      <text x="46" y="102" fill="#f7f3f7" font-family="monospace" font-size="11">MODE</text>
+      <text x="46" y="122" fill="#f7f3f7" font-family="monospace" font-size="11">STEP</text>
+      <text x="46" y="142" fill="#f7f3f7" font-family="monospace" font-size="11">BW</text>
+      <text x="46" y="162" fill="#f7f3f7" font-family="monospace" font-size="11">BFO</text>
+      <text x="46" y="182" fill="#f7f3f7" font-family="monospace" font-size="11">SEEK</text>
+      <text x="36" y="212" fill="#8c8e9c" font-family="monospace" font-size="10">vertical 98x150</text>
+
+      <rect x="262" y="70" width="330" height="54" rx="8" fill="#191821" stroke="#f79009" stroke-dasharray="4 3"/>
+      <text x="276" y="90" fill="#8c8e9c" font-family="monospace" font-size="11">MENU</text>
+      <rect x="276" y="96" width="58" height="20" rx="6" fill="#19416b"/>
+      <text x="284" y="110" fill="#19db94" font-family="monospace" font-size="10">BAND</text>
+      <text x="342" y="110" fill="#f7f3f7" font-family="monospace" font-size="10">MODE</text>
+      <text x="392" y="110" fill="#f7f3f7" font-family="monospace" font-size="10">STEP</text>
+      <text x="436" y="110" fill="#f7f3f7" font-family="monospace" font-size="10">BW</text>
+      <text x="276" y="136" fill="#8c8e9c" font-family="monospace" font-size="10">horizontal 304x50 · value line</text>
+    </svg>
+    <figcaption>그림 4. 세로/가로 패널 / Fig 4. Vertical and horizontal panels</figcaption>
+  </figure>
+</section>
+
+<!-- ============================= 13 ============================= -->
+<section class="card" id="bindings">
+  <h2><span class="ko">13. 바인딩</span><span class="en">13. Bindings</span></h2>
+  <div class="ko"><p>텍스트/바가 표시할 값을 고릅니다. 값 이름은 펌웨어와 1:1로 대응합니다.</p></div>
+  <div class="en"><p>Select which firmware value a text or bar displays.</p></div>
+
+  <table>
+    <thead><tr><th>바인딩 / Binding</th><th>표시 / Shows</th><th>예 / Example</th></tr></thead>
+    <tbody>
+      <tr><td><code>freq</code></td><td>주파수 문자열 / frequency text</td><td>89.10</td></tr>
+      <tr><td><code>mode</code></td><td>모드 / mode</td><td>FM, LSB</td></tr>
+      <tr><td><code>band</code></td><td>밴드명 / band name</td><td>VHF, 40m</td></tr>
+      <tr><td><code>rssi</code></td><td>신호 세기 0–63</td><td>34</td></tr>
+      <tr><td><code>snr</code></td><td>SNR 0–63</td><td>7</td></tr>
+      <tr><td><code>clock</code></td><td>시계 HH:MM</td><td>22:29</td></tr>
+      <tr><td><code>date</code></td><td>날짜 / date</td><td>2026-10-26</td></tr>
+      <tr><td><code>ps</code>, <code>rt</code>, <code>pty</code></td><td>RDS 문자열 / RDS fields</td><td>KBS 1FM</td></tr>
+      <tr><td><code>preset</code>, <code>pname</code></td><td>프리셋 번호/이름 / preset</td><td>P01</td></tr>
+      <tr><td><code>ats</code></td><td>ATS 번호 / ATS index</td><td>A07</td></tr>
+      <tr><td><code>batt</code>, <code>battv</code></td><td>배터리 %, 전압 / percent and volts</td><td>87, 4.41V</td></tr>
+      <tr><td><code>vol</code></td><td>볼륨 / volume</td><td>15</td></tr>
+      <tr><td><code>bw</code>, <code>step</code></td><td>대역폭, 스텝 / bandwidth, step</td><td>AUTO, 100K</td></tr>
+      <tr><td><code>bfo</code>, <code>agc</code>, <code>sm</code></td><td>BFO / AGC / 소프트뮤트</td><td>+0, ON, 4</td></tr>
+      <tr><td><code>afc</code>, <code>avc</code>, <code>sq</code></td><td>AFC / AVC / 스퀠치</td><td>OK, 63, OFF</td></tr>
+      <tr><td><code>stereo</code></td><td>스테레오 표시 / stereo flag</td><td>ST</td></tr>
+      <tr><td><code>line1</code>–<code>line3</code></td><td>파라미터 조합 줄 / parameter lines</td><td>BW AUTO ST 100K</td></tr>
+      <tr><td><code>eibi</code></td><td>EiBi 방송 정보 / EiBi info</td><td>KBS World 19:00</td></tr>
+      <tr><td><code>toast</code></td><td>안내 메시지 / toast text</td><td>SAVED</td></tr>
+      <tr><td><code>wifi</code></td><td>Wi-Fi 상태 문자 / Wi-Fi state</td><td>STA, AP</td></tr>
+      <tr><td><code>status</code></td><td>VOL/BRT 요약 / volume + brightness</td><td>VOL 15 BRT 50</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================= 14 ============================= -->
+<section class="card" id="save">
+  <h2><span class="ko">14. 저장과 불러오기</span><span class="en">14. Save &amp; Load</span></h2>
+
+  <h3><span class="ko">14-1. 라디오에 저장</span><span class="en">14-1. Save to radio</span></h3>
+  <div class="ko">
+    <ol>
+      <li><b>라디오에 저장</b> 클릭 → 이름 입력(영문/숫자/<code>_</code>/<code>-</code>, 1–24자)</li>
+      <li>같은 이름이 있으면 덮어쓸지 물어봅니다(대소문자 무시).</li>
+      <li>저장 성공 시 <b>즉시 활성화</b>되고 기기 화면이 갱신됩니다.</li>
+      <li>실패 시 사유가 상단 상태 영역과 모달로 표시됩니다.</li>
+    </ol>
+  </div>
+  <div class="en">
+    <ol>
+      <li>Press <b>Save to radio</b> and enter a name (letters/digits/<code>_</code>/<code>-</code>, 1–24).</li>
+      <li>If the name exists you are asked to overwrite (case-insensitive).</li>
+      <li>On success the layout is <b>activated immediately</b>.</li>
+      <li>Failures are reported in the status area and a modal.</li>
+    </ol>
+  </div>
+
+  <h3><span class="ko">14-2. UI 목록</span><span class="en">14-2. UI List</span></h3>
+  <ul>
+    <li>기기에 저장된 UI 목록 표시 / lists layouts stored on the radio</li>
+    <li>항목 클릭 → 불러오기 / click to load</li>
+    <li><b>Delete</b> → 확인 후 삭제 / delete with confirmation</li>
+    <li><code>(active)</code> 표시는 현재 적용 중 / marks the active layout</li>
+  </ul>
+
+  <h3><span class="ko">14-3. 다운로드 / 가져오기</span><span class="en">14-3. Export / Import</span></h3>
+  <ul>
+    <li><b>다운로드</b>: <code>.mrpack</code> (JSON) — 3개 레이아웃 + 팔레트 + 메타</li>
+    <li><b>가져오기</b>: 파일 선택 → 검증 후 로드. 오류 시 이유 표시</li>
+    <li>브라우저 저장이 아니므로, <b>새로고침 전 반드시 다운로드 또는 라디오 저장</b></li>
+  </ul>
+  <div class="tip">
+    <b><span class="ko">되돌리기</span><span class="en">Roll back</span></b>
+    <p class="ko">적용한 UI가 마음에 들지 않으면 <b>기기 SETTINGS → THEME</b>에서
+      원래 UI(기본 테마)로 언제든 되돌릴 수 있습니다.</p>
+    <p class="en">If you do not like the applied layout, open <b>SETTINGS → THEME</b> on the
+      device and switch back to the original UI (default theme) at any time.</p>
+  </div>
+</section>
+
+<!-- ============================= 15 ============================= -->
+<section class="card" id="theme">
+  <h2><span class="ko">15. 테마 연동</span><span class="en">15. Themes</span></h2>
+  <div class="ko">
+    <ul>
+      <li>기본 테마 외에 <b>커스텀 테마</b>는 저장된 UI의 팔레트를 사용합니다.</li>
+      <li>테마 목록에는 저장된 <b>파일 이름</b>이 그대로 표시됩니다.</li>
+      <li>선택하면 즉시 적용되고 열려 있던 모달/오버레이는 모두 닫힙니다(토스트 없음).</li>
+      <li>커스텀 테마에서 MENU/SETTINGS 패널은 저장된 패널 위치·크기·방향을 따릅니다.</li>
+    </ul>
+  </div>
+  <div class="en">
+    <ul>
+      <li><b>Custom themes</b> use the palette of a saved UI.</li>
+      <li>The theme list shows the saved <b>file names</b>.</li>
+      <li>Selecting applies immediately and closes any open modal (no toast).</li>
+      <li>In custom themes the MENU/SETTINGS panel follows the saved position, size and orientation.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================= 16 ============================= -->
+<section class="card" id="format">
+  <h2><span class="ko">16. 런타임 파일 포맷</span><span class="en">16. Runtime format</span></h2>
+  <div class="ko">
+    <p>기기에는 텍스트 파일 하나로 저장됩니다. 첫 줄은 포맷 식별자, 둘째 줄은 팔레트,
+      이후는 위젯 라인입니다.</p>
+  </div>
+  <div class="en">
+    <p>Stored as a single text file: identifier line, palette line, then one line per widget.</p>
+  </div>
+
+<pre><span class="c">UIR1</span>
+PAL  <span class="c"># 16 colors as decimal RGB565</span>
+<span class="c">type  x   y   w    h   modes fill stroke color font align bind chip max scale \t text</span>
+1     14  6   70   12  7     0    0      2     0    0     6    0    0   100   \t
+4     12  40  200  32  7     0    0      0     0    0     0    0    0   100   \t
+11    166 5   18   11  7     0    0      6     0    0     0    0    0   100   \t
+</pre>
+
+  <h3><span class="ko">16-1. 타입 코드</span><span class="en">16-1. Type codes</span></h3>
+  <table>
+    <thead><tr><th>값 / Value</th><th>타입 / Type</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>rect</td></tr>
+      <tr><td>1</td><td>text</td></tr>
+      <tr><td>2</td><td>bar</td></tr>
+      <tr><td>3</td><td>line</td></tr>
+      <tr><td>4</td><td>freq</td></tr>
+      <tr><td>5</td><td>rsq</td></tr>
+      <tr><td>6</td><td>rds / info card</td></tr>
+      <tr><td>7</td><td>sig (graph)</td></tr>
+      <tr><td>8</td><td>bandmap</td></tr>
+      <tr><td>10</td><td>menu guide (PANEL)</td></tr>
+      <tr><td>11</td><td>wifi signal icon</td></tr>
+    </tbody>
+  </table>
+
+  <h3><span class="ko">16-2. 필드</span><span class="en">16-2. Fields</span></h3>
+  <table>
+    <thead><tr><th>필드 / Field</th><th>설명 / Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>modes</code></td><td>모드 마스크 1=FM, 2=AM, 4=SSB, 7/0=공통</td></tr>
+      <tr><td><code>fill/stroke/color</code></td><td>색상 인덱스(위 팔레트 순서와 별개의 UI 색상 인덱스)</td></tr>
+      <tr><td><code>font</code></td><td>0 tiny, 1 small, 2 large</td></tr>
+      <tr><td><code>align</code></td><td>0 left, 1 center, 2 right</td></tr>
+      <tr><td><code>bind</code></td><td>바인딩 번호(펌웨어 enum)</td></tr>
+      <tr><td><code>chip</code></td><td>1이면 텍스트 뒤 알약 배경</td></tr>
+      <tr><td><code>max</code></td><td>bar 최댓값</td></tr>
+      <tr><td><code>scale</code></td><td>50–200 (생략 시 100)</td></tr>
+      <tr><td><code>text</code></td><td>탭 뒤 문자열(리터럴 텍스트)</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>왜 알아야 하나요?</b>
+    <div class="ko">문제가 생겼을 때 <code>/api/ui/layout?name=...</code>로 실제 저장된 값을 확인할 수 있습니다.
+      좌표가 이상하면 이 텍스트를 직접 보고 고칠 수 있습니다.</div>
+    <div class="en">When something looks wrong, fetch <code>/api/ui/layout?name=...</code> to inspect the
+      stored values and fix them directly if needed.</div>
+  </div>
+</section>
+
+<!-- ============================= 17 ============================= -->
+<section class="card" id="i18n">
+  <h2><span class="ko">17. 언어</span><span class="en">17. Language</span></h2>
+  <div class="ko">
+    <p>에디터는 <b>한국어 / 영어</b>를 지원합니다. 상단 <code>EN</code> / <code>한국어</code> 버튼으로
+      전환되며 선택은 브라우저에 기억됩니다. 팔레트, 속성, 레이어, 모달, 검증 메시지까지 모두 번역됩니다.</p>
+  </div>
+  <div class="en">
+    <p>The editor supports <b>Korean / English</b>. Use the <code>EN</code> / <code>한국어</code> toggle;
+      the choice is remembered. Palette, properties, layers, modals and validation messages are all translated.</p>
+  </div>
+</section>
+
+<!-- ============================= 18 ============================= -->
+<section class="card" id="limits">
+  <h2><span class="ko">18. 제한</span><span class="en">18. Limits</span></h2>
+  <table>
+    <thead><tr><th>항목 / Item</th><th>값 / Value</th></tr></thead>
+    <tbody>
+      <tr><td>화면 / Screen</td><td>320 × 170 px</td></tr>
+      <tr><td>위젯 수 / Widgets</td><td>레이아웃당 128개 / 128 per layout</td></tr>
+      <tr><td>레이아웃 파일 / Layout file</td><td>16 KB</td></tr>
+      <tr><td>프로젝트 파일 / Project file</td><td>128 KB</td></tr>
+      <tr><td>이름 길이 / Name length</td><td>1–24자, 영문/숫자/_/-</td></tr>
+      <tr><td>텍스트 길이 / Text length</td><td>64 bytes</td></tr>
+      <tr><td>Scale</td><td>50–200 %</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================= 19 ============================= -->
+<section class="card" id="faq">
+  <h2><span class="ko">19. FAQ</span><span class="en">19. FAQ</span></h2>
+
+  <h3><span class="ko">Q. 글자 좌표가 드래그한 위치와 다르게 보여요.</span><span class="en">Q. The text does not sit where I dragged it.</span></h3>
+  <div class="ko"><p>오른쪽 정렬(<code>r</code>)은 글자가 박스의 <b>오른쪽 끝</b>에 붙기 때문입니다. 속성에서 <b>Align = l</b>로 바꾸면 드래그한 위치에 그대로 놓입니다.</p></div>
+  <div class="en"><p>Right alignment pins the text to the <b>right edge</b> of the box. Set <b>Align = l</b> in Properties to make the drag position match.</p></div>
+
+  <h3><span class="ko">Q. 저장했는데 화면이 그대로예요.</span><span class="en">Q. I saved, but the screen did not change.</span></h3>
+  <div class="ko"><p>① <b>UI List</b>에서 활성 표시가 붙은 이름이 맞는지, ② 저장 직후 상태 문구가
+    <code>저장+적용됨</code>으로 바뀌었는지 확인하세요. 그대로라면 한 번 더 <b>라디오에 저장</b>하면 됩니다.</p></div>
+  <div class="en"><p>Check the active name in <b>UI List</b>, and confirm the status line shows
+    <code>saved+applied</code>. Save again if needed.</p></div>
+
+  <h3><span class="ko">Q. 위젯이 안 보여요.</span><span class="en">Q. A widget is not visible.</span></h3>
+  <div class="ko"><p>① <b>Hide</b>가 켜져 있는지, ② <b>모드 마스크</b>가 현재 모드와 맞는지,
+    ③ 다른 위젯에 가려져 있지는 않은지 확인하세요.</p></div>
+  <div class="en"><p>Check <b>Hide</b>, the mode mask, and whether another widget covers it.</p></div>
+
+  <h3><span class="ko">Q. 128개 제한에 걸렸어요.</span><span class="en">Q. I hit the 128-widget limit.</span></h3>
+  <div class="ko">
+    <p><b>128개는 화면 한 장 기준</b>입니다. FM·AM·SSB는 서로 다른 화면이므로
+      <b>각각 128개</b>까지 쓸 수 있고, 세 화면을 합쳐서 세는 것이 아닙니다.</p>
+    <p>모듈 하나는 위젯 여러 개로 이루어집니다. 예를 들어 <b>Header + Wi-Fi</b>는
+      배경·시계·Wi-Fi·전압·시그널·배터리·구분선까지 <b>7개</b>, <b>RSSI / SNR</b>은 <b>6개</b>입니다.
+      모듈 20개를 놓으면 대략 100개를 넘습니다.</p>
+    <p>줄이는 방법: ① 쓰지 않는 <b>Line</b>(구분선)과 장식용 <b>Rect</b> 삭제 →
+      ② 두 줄짜리 텍스트를 하나로 합치기 → ③ 필요 없는 모듈 제거.
+      현재 개수는 오른쪽 <b>속성</b> 패널의 <code>items:</code> 값으로 확인할 수 있습니다.</p>
+  </div>
+  <div class="en">
+    <p><b>The limit is 128 per screen.</b> FM, AM and SSB are separate screens, so each one gets
+      its own 128 — they are not added together.</p>
+    <p>A single module is made of several widgets. <b>Header + Wi-Fi</b> is 7 widgets
+      (background, clock, Wi-Fi, voltage, signal, battery, divider) and <b>RSSI / SNR</b> is 6.
+      Twenty modules already exceed 100 widgets.</p>
+    <p>How to reduce: ① delete unused <b>Line</b> dividers and decorative <b>Rect</b> panels →
+      ② merge two-line text into one → ③ remove unneeded modules. Check the current count in the
+      <b>Properties</b> panel (<code>items:</code>).</p>
+  </div>
+
+  <h3><span class="ko">Q. 새로고침하면 작업이 사라지나요?</span><span class="en">Q. Do I lose my work when I refresh?</span></h3>
+  <div class="ko"><p>네. 에디터는 브라우저에 작업 내용을 저장하지 않습니다. 작업 중간중간
+    <b>라디오에 저장</b>하거나 <b>다운로드</b>로 백업하세요.</p></div>
+  <div class="en"><p>Yes. The editor has no local storage. Save to the radio or download the project.</p></div>
+
+  <h3><span class="ko">Q. 가로 패널에서 항목이 잘려 보여요.</span><span class="en">Q. Items are cut off in a horizontal panel.</span></h3>
+  <div class="ko"><p>가로 패널은 폭에 맞춰 <b>한 항목씩</b> 스크롤합니다. 폭을 넓히면 더 많이 보입니다.</p></div>
+  <div class="en"><p>Horizontal panels scroll one item at a time. Widen the panel to show more.</p></div>
+
+  <h3><span class="ko">Q. Signal icon이 안 보여요.</span><span class="en">Q. The Signal icon is not showing.</span></h3>
+  <div class="ko"><p>Wi-Fi가 연결되지 않으면 표시되지 않습니다(의도된 동작). AP/STA/스캔 상태에서만 보입니다.</p></div>
+  <div class="en"><p>It is hidden while disconnected — by design. It appears in AP, STA and scanning states.</p></div>
+
+  <h3><span class="ko">Q. 색을 바꿨는데 일부만 바뀌어요.</span><span class="en">Q. Only some colors changed.</span></h3>
+  <div class="ko"><p>위젯마다 색상 키가 지정되어 있습니다. 팔레트 값은 <b>키를 쓰는 위젯</b>에만 적용됩니다.</p></div>
+  <div class="en"><p>Each widget references a palette key; only widgets using that key change.</p></div>
+</section>
+
+<!-- ============================= 20 ============================= -->
+<section class="card" id="license">
+  <h2><span class="ko">20. 라이선스</span><span class="en">20. License</span></h2>
+  <div class="ko">
+    <p>에디터와 펌웨어 자체 코드는 <b>MIT</b>입니다. 함께 포함된 외부 구성요소는 각자의 라이선스를 따르며
+      고지는 삭제하지 않습니다.</p>
+  </div>
+  <div class="en">
+    <p>Editor and firmware code are <b>MIT</b>. Bundled components keep their own licenses and
+      their notices must be preserved.</p>
+  </div>
+  <table>
+    <thead><tr><th>구성 / Component</th><th>라이선스 / License</th></tr></thead>
+    <tbody>
+      <tr><td>Editor (HTML/CSS/JS)</td><td>MIT</td></tr>
+      <tr><td>Firmware (ESP-IDF app)</td><td>MIT</td></tr>
+      <tr><td><code>components/display</code></td><td>MIT (ESP32-SI4732 Radio / Max Arnold notice)</td></tr>
+      <tr><td><code>components/lovyan_gfx</code></td><td>MIT family (see <code>license.txt</code>)</td></tr>
+      <tr><td><code>joltwallet/littlefs</code></td><td>BSD-3-Clause</td></tr>
+      <tr><td>ESP-IDF</td><td>Apache-2.0</td></tr>
+    </tbody>
+  </table>
+  <p class="sub"><span class="ko">전체 고지는 기기 화면의 <b>Licenses</b> 페이지에서 확인할 수 있습니다.</span>
+    <span class="en">Full notices are available on the device's <b>Licenses</b> page.</span></p>
+
+  <hr>
+  <p class="sub">Designed &amp; developed by <b>@gnbd</b> ·
+    <a href="https://gnbdatsmini.netlify.app/docs" target="_blank" rel="noopener noreferrer">gnbdatsmini.netlify.app/docs</a><br>
+    GNBD MINI·radio UI Editor v0.1.0 beta · 2026</p>
+</section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  const KEY = "gnbd.docs.lang";
+  const buttons = Array.from(document.querySelectorAll(".langbtns button"));
+  function set(lang) {
+    document.body.dataset.lang = lang;
+    buttons.forEach((b) => b.classList.toggle("on", b.dataset.lang === lang));
+    try { localStorage.setItem(KEY, lang); } catch (e) {}
+  }
+  buttons.forEach((b) => b.addEventListener("click", () => set(b.dataset.lang)));
+  let saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  set(saved === "en" ? "en" : "ko");
+})();
+</script>
+</body>
+</html>
