@@ -73,9 +73,23 @@ void rmenu_build(void)
     labels[n] = "< BACK";
     s_menu_ids[n] = RM_BACK;
     ++n;
-    /* 2) EXLU 앱: BACK 바로 아래 */
-    exlu_manifest_t apps[8];
-    int na = exlu_app_list(apps, 8);
+    /* 2) EXLU 앱: 부팅에서 선택한 앱만 BACK 바로 아래에 노출.
+          (None/미선택이면 메뉴에 아무것도 추가하지 않는다) */
+    exlu_manifest_t apps[1];
+    int na = 0;
+    {
+        const char *boot = exlu_get_boot_id();
+        if (boot && boot[0]) {
+            exlu_t be;
+            if (exlu_load(boot, &be) == EXLU_OK) {
+                if (be.manifest.kind == EXLU_KIND_APP) {
+                    apps[0] = be.manifest;
+                    na = 1;
+                }
+                exlu_free(&be);
+            }
+        }
+    }
     for (int i = 0; i < na && n < RMENU_MAX; ++i) {
         /* 기기 폰트는 ASCII 만 표시 가능: 비ASCII/제어문자는 '_' 로 */
         size_t j = 0;
@@ -991,11 +1005,9 @@ void menu_action(int item)
     int id = menu_id_at(item);
     bool mod_hit = false;
     if (id >= EXLU_MENU_BASE) {
-        exlu_manifest_t apps[8];
-        int na = exlu_app_list(apps, 8);
-        int ai = id - EXLU_MENU_BASE;
-        if (ai >= 0 && ai < na) {
-            const char *err = exlu_app_launch(apps[ai].id);
+        const char *boot = exlu_get_boot_id();
+        if (boot && boot[0]) {
+            const char *err = exlu_app_launch(boot);
             if (err) {
                 toast(err);
             } else {

@@ -11,11 +11,11 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function (S, P) {
   function V() { this.errors = []; this.warnings = []; }
   V.prototype.err = function (code, message, path) {
-    message = (root && root.I18N) ? root.I18N.tm(message) : message;
+    message = (globalThis.I18N && globalThis.I18N) ? globalThis.I18N.tm(message) : message;
     this.errors.push({ code, message, path: path || "", severity: "error" });
   };
   V.prototype.warn = function (code, message, path) {
-    message = (root && root.I18N) ? root.I18N.tm(message) : message;
+    message = (globalThis.I18N && globalThis.I18N) ? globalThis.I18N.tm(message) : message;
     this.warnings.push({ code, message, path: path || "", severity: "warning" });
   };
 

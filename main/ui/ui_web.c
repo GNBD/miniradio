@@ -399,7 +399,10 @@ static esp_err_t asset_handler(httpd_req_t *req)
         const ui_asset_t *a = &ui_editor_assets[i];
         if (strcmp(a->path, want) != 0) continue;
         httpd_resp_set_type(req, a->mime);
-        httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+        httpd_resp_set_hdr(req, "Cache-Control",
+                           "no-store, no-cache, must-revalidate, max-age=0");
+        httpd_resp_set_hdr(req, "Pragma", "no-cache");
+        httpd_resp_set_hdr(req, "Expires", "0");
         return httpd_resp_send(req, a->data, a->len);
     }
     httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "not found");

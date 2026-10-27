@@ -62,13 +62,28 @@
     return slug(($("exId").value || "").trim() || ($("exName").value || "").trim());
   }
 
+  function drawPreview() {
+    const cv = $("previewCanvas");
+    if (!cv || !window.ED || !window.Render) return;
+    const ctx = cv.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    const mask = [1, 2, 4][ED.pmode || 0];
+    Render.draw(ctx, { bg: ED.project.bg, items: ED.sortedItems() },
+                ED.sim, 2, mask, true);
+  }
+
   function tab(which) {
     const layout = which === "layout";
     $("tabLayout").classList.toggle("on", layout);
     $("tabApp").classList.toggle("on", !layout);
     $("viewLayout").style.display = layout ? "" : "none";
     $("viewApp").classList.toggle("on", !layout);
-    if (layout && window.ED) ED.draw();
+    if (layout && window.ED) {
+      ED.draw();
+    } else {
+      drawPreview();
+      if (window.Blocks) Blocks.refresh();
+    }
   }
 
   function buildExlu() {
@@ -235,6 +250,14 @@
     $("btnExluDownload").onclick = download;
     $("btnExluRefresh").onclick = refresh;
     $("btnExluApply").onclick = apply;
+    /* 레이아웃 변경 시 미리보기 갱신 */
+    if (window.ED) {
+      const origDraw = ED.draw.bind(ED);
+      ED.draw = function () {
+        origDraw();
+        if ($("viewApp").classList.contains("on")) drawPreview();
+      };
+    }
     $("exName").addEventListener("input", () => {
       if (!$("exId").value) $("projName").value = $("exName").value || "my-app";
     });

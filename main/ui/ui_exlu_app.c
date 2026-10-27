@@ -166,28 +166,35 @@ const char *exlu_app_current(void)
 static void draw_boot_list(const exlu_manifest_t *m, int n, int cursor,
                            const char *status)
 {
+    /* index 0 = None, 1..n = EXLU 항목 */
+
     display_fill_screen(UI_BG);
     panel(40, 22, 240, 126, 12, UI_PANEL, UI_LINE);
-    display_draw_text(UI_W / 2, 30, "SELECT EXLU", DISPLAY_FONT_SMALL,
+    display_draw_text(UI_W / 2, 30, "Select Extended", DISPLAY_FONT_SMALL,
                       UI_ACC_HI, UI_PANEL, DISPLAY_DATUM_TC);
 
-    if (n == 0) {
-        display_draw_text(UI_W / 2, 70, "NO EXLU", DISPLAY_FONT_TINY,
-                          UI_MUTED, UI_PANEL, DISPLAY_DATUM_TC);
-    }
-    for (int i = 0; i < n && i < 6; ++i) {
+    for (int i = 0; i <= n && i < 6; ++i) {
         int y = 48 + i * 14;
         bool cur = (i == cursor);
         if (cur) {
             display_fill_round_rect(50, (int16_t)(y - 2), 220, 14, 6, UI_HSEL);
         }
-        display_draw_text(56, (int16_t)y, m[i].name, DISPLAY_FONT_TINY,
-                          cur ? UI_ACC_HI : UI_FG, cur ? UI_HSEL : UI_PANEL,
-                          DISPLAY_DATUM_TL);
-        display_draw_text(264, (int16_t)y,
-                          m[i].kind == EXLU_KIND_THEME ? "THEME" : "APP",
-                          DISPLAY_FONT_TINY, UI_MUTED,
-                          cur ? UI_HSEL : UI_PANEL, DISPLAY_DATUM_TR);
+        if (i == 0) {
+            display_draw_text(56, (int16_t)y, "None", DISPLAY_FONT_TINY,
+                              cur ? UI_ACC_HI : UI_FG,
+                              cur ? UI_HSEL : UI_PANEL, DISPLAY_DATUM_TL);
+            display_draw_text(264, (int16_t)y, "DEFAULT", DISPLAY_FONT_TINY,
+                              UI_MUTED, cur ? UI_HSEL : UI_PANEL,
+                              DISPLAY_DATUM_TR);
+        } else {
+            display_draw_text(56, (int16_t)y, m[i - 1].name, DISPLAY_FONT_TINY,
+                              cur ? UI_ACC_HI : UI_FG,
+                              cur ? UI_HSEL : UI_PANEL, DISPLAY_DATUM_TL);
+            display_draw_text(264, (int16_t)y,
+                              m[i - 1].kind == EXLU_KIND_THEME ? "THEME" : "APP",
+                              DISPLAY_FONT_TINY, UI_MUTED,
+                              cur ? UI_HSEL : UI_PANEL, DISPLAY_DATUM_TR);
+        }
     }
     display_draw_text(UI_W / 2, 136, "TURN: MOVE   CLICK: START",
                       DISPLAY_FONT_TINY, UI_MUTED, UI_PANEL,
@@ -241,17 +248,22 @@ bool exlu_boot_select(void)
         }
         int d = encoder_get_delta();
         if (d != 0) {
-            cursor = (cursor + (d > 0 ? 1 : -1) + n) % n;
+            cursor = (cursor + (d > 0 ? 1 : -1) + (n + 1)) % (n + 1);
             last_delta = d;
             draw_boot_list(m, n, cursor, status);
             t0 = now;
         }
         bool pressed = gpio_get_level((gpio_num_t)BOARD_ENC_PUSH_GPIO) == 0;
         if (pressed) {
+            if (cursor == 0) {
+                exlu_set_boot_id("");
+                ESP_LOGI(TAG, "boot selection: none");
+                return false;
+            }
             const char *err = NULL;
-            if (m[cursor].kind == EXLU_KIND_THEME) {
+            if (m[cursor - 1].kind == EXLU_KIND_THEME) {
                 exlu_t e;
-                if (exlu_load(m[cursor].id, &e) == EXLU_OK) {
+                if (exlu_load(m[cursor - 1].id, &e) == EXLU_OK) {
                     if (exlu_apply(&e) != EXLU_OK) {
                         err = "E_LAYOUT: theme apply failed";
                     }
@@ -260,7 +272,7 @@ bool exlu_boot_select(void)
                     err = "E_OPEN: cannot load theme";
                 }
             } else {
-                err = exlu_app_launch(m[cursor].id);
+                err = exlu_app_launch(m[cursor - 1].id);
             }
             if (err) {
                 snprintf(status, sizeof(status), "%s", err);
@@ -269,31 +281,13 @@ bool exlu_boot_select(void)
                 vTaskDelay(pdMS_TO_TICKS(1200));
                 continue;
             }
-            exlu_set_boot_id(m[cursor].id);
-            ESP_LOGI(TAG, "boot selected: %s", m[cursor].id);
+            exlu_set_boot_id(m[cursor - 1].id);
+            ESP_LOGI(TAG, "boot selected: %s", m[cursor - 1].id);
             return true;
         }
         vTaskDelay(pdMS_TO_TICKS(20));
     }
     (void)last_delta;
-    /* 타임아웃: 마지막으로 선택했던 항목이 있으면 자동 실행 */
-    const char *auto_id = exlu_get_boot_id();
-    if (auto_id && auto_id[0]) {
-        for (int i = 0; i < n; ++i) {
-            if (strcmp(m[i].id, auto_id) == 0) {
-                if (m[i].kind == EXLU_KIND_THEME) {
-                    exlu_t e;
-                    if (exlu_load(auto_id, &e) == EXLU_OK) {
-                        exlu_apply(&e);
-                        exlu_free(&e);
-                    }
-                } else {
-                    exlu_app_launch(auto_id);
-                }
-                ESP_LOGI(TAG, "boot auto: %s", auto_id);
-                return true;
-            }
-        }
-    }
+    /* 타임아웃: None 과 동일하게 아무것도 적용하지 않는다 */
     return false;
 }
