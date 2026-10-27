@@ -286,6 +286,21 @@ static const char *str_bind(uint8_t b, const ui_state_t *s, char *buf, size_t n)
         return buf;
     case UC_B_EIBI:
         return (s->station && s->station[0]) ? s->station : "";
+    case UC_B_TOAST:
+        return s_toast[0] ? s_toast : "";
+    case UC_B_SLEEP:
+        if (!s_sleep_armed || s_sleep_min == 0) {
+            return "";
+        }
+        {
+            int32_t remain = (int32_t)(s_sleep_deadline - now_ms());
+            if (remain < 0) {
+                remain = 0;
+            }
+            int sec = (int)((remain + 999) / 1000);
+            snprintf(buf, n, "SLEEP %d:%02d", sec / 60, sec % 60);
+            return buf;
+        }
     default: return buf;
     }
 }
