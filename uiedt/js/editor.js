@@ -252,7 +252,7 @@ const ED = {
      화면 픽셀 기준으로 반경을 환산해 확대/축소 어느 쪽에서도 잡기 쉽게 한다. */
   handleAt(w, p) {
     const zoom = this.zoom || 1;
-    const t = Math.max(3, 9 / zoom);   /* 화면 약 9px, 최소 3 논리 px */
+    const t = Math.max(2, 5 / zoom);   /* 화면 약 5px, 최소 2 논리 px */
     if (p.x < w.x - t || p.x > w.x + w.w + t) return null;
     if (p.y < w.y - t || p.y > w.y + w.h + t) return null;
 
