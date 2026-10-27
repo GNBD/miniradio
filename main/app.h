@@ -80,13 +80,6 @@ enum {
     ST_ABOUT, ST_COUNT
 };
 
-/* 화면 레이아웃 모드 */
-enum {
-    UI_MODE_EASY = 0,
-    UI_MODE_STANDARD,
-    UI_MODE_COUNT
-};
-
 #define FM_STEP_COUNT   2
 #define AM_STEP_COUNT   4
 #define SSB_STEP_COUNT  5
@@ -248,7 +241,6 @@ extern bool     s_clock_set;
 extern int16_t  s_utc_min;
 extern bool     s_follow_browser;
 extern bool     s_sntp_started;
-extern uint8_t  s_ui_mode;
 extern bool     s_setup_done;
 extern bool     s_digit_mode;
 extern int      s_digit_place;

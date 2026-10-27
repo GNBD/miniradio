@@ -717,11 +717,7 @@ void app_main(void)
                 s_ui.station && (now - st_ms) > 300) {
                 st_ms = now;
                 if (s_hmi == HMI_TUNE) {
-                    if (s_ui.ui_mode != UI_MODE_EASY) {
-                        ui_draw_all(&s_ui);
-                    } else {
-                        ui_draw_rds(&s_ui);
-                    }
+                    ui_draw_all(&s_ui);
                 } else if (s_hmi == HMI_MENU || s_hmi == HMI_SET ||
                            s_hmi == HMI_FAV || s_hmi == HMI_ATS_LIST) {
                     ui_draw_radio_panel(&s_ui);
@@ -862,9 +858,8 @@ void app_main(void)
         toast_redraw();
         display_flush();
 
-        if (s_ui.ui_mode != UI_MODE_EASY &&
-            (s_hmi == HMI_TUNE || s_hmi == HMI_SEEK ||
-             s_hmi == HMI_DECODE)) {
+        if (s_hmi == HMI_TUNE || s_hmi == HMI_SEEK ||
+            s_hmi == HMI_DECODE) {
             vTaskDelay(TICK_MS(10));
         } else {
             vTaskDelay(TICK_MS(20));

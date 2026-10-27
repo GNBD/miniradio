@@ -181,8 +181,6 @@ void restore_settings(const storage_settings_t *cfg)
     s_sleep_min = cfg->sleep_min;
     s_ui.volume = cfg->volume;
     s_weather_mode = (cfg->reserved[0] <= 1) ? cfg->reserved[0] : 0;
-    s_ui_mode = 1;
-    s_ui.ui_mode = 1;
 
     for (int i = 0; i < 16; ++i) {
         s_band_freq[i] = cfg->band_freq[i];

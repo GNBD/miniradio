@@ -978,9 +978,6 @@ void menu_action(int item)
         s_hmi = HMI_SEEK;
         s_ui.seek_mode = true;
         s_nav_ms = now_ms();
-        if (s_ui.ui_mode == UI_MODE_EASY) {
-            ui_draw_header(&s_ui);
-        }
         toast("SEEK: turn");
         break;
     case RM_ATS:

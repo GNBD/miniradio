@@ -52,7 +52,6 @@ uint8_t  s_batt_view = 3;
 int16_t  s_batt_cal_mv;
 uint16_t s_screen_sec = 0;
 uint8_t  s_unit_mode = 0;
-uint8_t  s_ui_mode = 1;
 bool     s_setup_done;
 bool     s_digit_mode;
 int      s_digit_place;

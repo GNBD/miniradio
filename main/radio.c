@@ -70,13 +70,7 @@ static void scan_draw_radio(void)
     if (s_hmi != HMI_TUNE && s_hmi != HMI_SEEK) {
         return;
     }
-    if (s_ui.ui_mode != UI_MODE_EASY) {
-        ui_draw_all(&s_ui);
-    } else {
-        ui_draw_freq(&s_ui);
-        ui_draw_status(&s_ui);
-        ui_draw_smeter(&s_ui);
-    }
+    ui_draw_all(&s_ui);
 }
 
 static void scan_rsq_show(const si4732_rsq_t *r, bool redraw)
@@ -463,13 +457,7 @@ void seek_stop(void)
     }
     mark_change();
     s_freq_dirty = true;
-    if (s_ui.ui_mode != UI_MODE_EASY) {
-        ui_draw_all(&s_ui);
-    } else {
-        ui_draw_freq(&s_ui);
-        ui_draw_status(&s_ui);
-        ui_draw_smeter(&s_ui);
-    }
+    ui_draw_all(&s_ui);
     toast("SEEK STOP");
 }
 
@@ -677,11 +665,7 @@ void ats_poll(uint32_t now)
 
         if (s_ats_hold) {
             s_ats_hold = false;
-            if (s_ui.ui_mode != UI_MODE_EASY) {
-                ui_draw_all(&s_ui);
-            } else {
-                ui_draw_freq(&s_ui);
-            }
+            ui_draw_all(&s_ui);
         } else {
             si4732_rsq_t r;
             bool good;
@@ -702,11 +686,7 @@ void ats_poll(uint32_t now)
                 p->band = (uint8_t)s_ats_band;
                 p->mode = (uint8_t)s_ui.mode;
                 s_ats_last_freq = s_ui.freq_hz;
-                if (s_ui.ui_mode != UI_MODE_EASY) {
-                    ui_draw_all(&s_ui);
-                } else {
-                    ui_draw_freq_saved();
-                }
+                ui_draw_all(&s_ui);
                 s_ats_hold = true;
                 s_ats_wait = now + 300;
                 return;
@@ -991,7 +971,7 @@ void rsq_poll(uint32_t now)
             /* Sleep 카운트다운 패널이 떠 있는 동안은 주기 갱신을 멈춘다 */
         } else if (s_dbg_sig == 2) {
             /* 진단: 패널 리드로우 정지 (값/스켈치는 계속 갱신) */
-        } else if (s_ui.ui_mode != UI_MODE_EASY) {
+        } else {
             int64_t t0 = esp_timer_get_time();
             if (mute_changed) {
                 ui_draw_all(&s_ui);   /* SQ ?? ?? */
@@ -1000,15 +980,6 @@ void rsq_poll(uint32_t now)
             }
             if (s_dbg_sig) {
                 sigdbg_add((uint32_t)(esp_timer_get_time() - t0), r.rssi, r.snr);
-            }
-        } else {
-            static int last_rssi = -1;
-            int rssi = r.rssi > 63 ? 63 : r.rssi;
-            if (rssi != last_rssi || mute_changed) {
-                last_rssi = rssi;
-                ui_draw_smeter(&s_ui);
-                ui_draw_header(&s_ui);
-                toast_redraw();
             }
         }
     }
@@ -1059,12 +1030,7 @@ void rds_poll(uint32_t now)
     if (h != last_rds_hash) {
         last_rds_hash = h;
         if (s_hmi == HMI_TUNE && !s_sleep_cd) {
-            if (s_ui.ui_mode != UI_MODE_EASY) {
-                ui_draw_all(&s_ui);
-            } else {
-                ui_draw_rds(&s_ui);
-                toast_redraw();
-            }
+            ui_draw_all(&s_ui);
         }
     }
 }
