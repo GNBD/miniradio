@@ -169,8 +169,7 @@ void ui_draw_radio_freq(const ui_state_t *s); /* 모드별 주파수 갱신 */
 void ui_draw_adv_signal4(const ui_state_t *s);
 void ui_draw_adv_signal4b(const ui_state_t *s);
 void ui_draw_header(const ui_state_t *s);
-void draw_header_msg(const ui_state_t *s);
-void draw_header_sleep(void);     /* RADIO 탭 헤더만 */
+void draw_header_msg(const ui_state_t *s);     /* RADIO 탭 헤더만 */
 void ui_draw_band_meta(const ui_state_t *s);
 void ui_draw_status(const ui_state_t *s);
 void ui_draw_volume(const ui_state_t *s, bool show);

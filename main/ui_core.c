@@ -140,9 +140,6 @@ void bar(int x, int y, int w, int h, int value, int max_value,
 
 /* ------------------------------------------------------------- 헤더 */
 
-/* draw_status_right가 남긴 우측 상태 영역의 왼쪽 경계 */
-static int s_status_cursor = UI_W - 6;
-
 void wifi_icon(int x, int y, uint16_t color, int bars)
 {
     /* 배터리 아이콘 호출 막대: 호출 시마다 개수 변경 */
@@ -247,7 +244,32 @@ void draw_status_right(const ui_state_t *s, int right)
         cursor = gx - 6;
     }
 
-    s_status_cursor = cursor;
+    /* Sleep 카운트다운: 상태표시(배터리/Wi-Fi) 왼쪽 = 헤더 최대 우측.
+       중앙 영역은 SEEK%/SEEK/SSB 알림용으로 비워 둔다. */
+    if (s_sleep_min > 0 && s_sleep_armed) {
+        char b[20];
+        int32_t remain = (int32_t)(s_sleep_deadline - now_ms());
+        if (remain < 0) {
+            remain = 0;
+        }
+        int sec = (int)((remain + 999) / 1000);
+        if (sec > 99 * 60 + 59) {
+            sec = 99 * 60 + 59;
+        }
+        snprintf(b, sizeof(b), "SLEEP %d:%02d", sec / 60, sec % 60);
+        int tw = display_text_width(b, DISPLAY_FONT_TINY);
+        int tx = cursor - tw;
+        if (tx < 0) {
+            tx = 0;
+        }
+        int fw = cursor - tx;
+        if (fw < tw) {
+            fw = tw;
+        }
+        display_fill_rect((int16_t)tx, 0, (uint16_t)fw, HDR_H - 1, UI_BG);
+        display_draw_text((int16_t)tx, 6, b, DISPLAY_FONT_TINY, UI_ACC, UI_BG,
+                          DISPLAY_DATUM_TL);
+    }
 }
 
 void draw_header_tabs(ui_tab_t tab, const ui_state_t *s)
@@ -273,43 +295,6 @@ void draw_header_tabs(ui_tab_t tab, const ui_state_t *s)
         draw_status_right(s, UI_W);
     }
     display_fill_rect(0, HDR_LINE_Y, UI_W, 1, UI_LINE);
-}
-
-void draw_header_sleep(void)
-{
-    if (!(s_sleep_min > 0 && s_sleep_armed)) {
-        return;
-    }
-    char b[20];
-    int32_t remain = (int32_t)(s_sleep_deadline - now_ms());
-    if (remain < 0) {
-        remain = 0;
-    }
-    int sec = (int)((remain + 999) / 1000);
-    if (sec > 99 * 60 + 59) {
-        sec = 99 * 60 + 59;
-    }
-    snprintf(b, sizeof(b), "SLEEP %d:%02d", sec / 60, sec % 60);
-    int tw = display_text_width(b, DISPLAY_FONT_TINY);
-    /* 중앙 알림(46~170)은 침범하지 않고, 상태표시 왼쪽에 우측 정렬 */
-    int right = s_status_cursor;
-    if (right > UI_W - 6) {
-        right = UI_W - 6;
-    }
-    int tx = right - tw;
-    if (tx < 174) {
-        tx = 174;
-    }
-    int fw = right - tx;
-    if (fw < tw) {
-        fw = tw;
-    }
-    if (tx + fw > UI_W) {
-        fw = UI_W - tx;
-    }
-    display_fill_rect((int16_t)tx, 0, (uint16_t)fw, HDR_H - 1, UI_BG);
-    display_draw_text((int16_t)tx, 6, b, DISPLAY_FONT_TINY, UI_ACC, UI_BG,
-                      DISPLAY_DATUM_TL);
 }
 
 void draw_header_msg(const ui_state_t *s)
@@ -349,7 +334,6 @@ void draw_header_msg(const ui_state_t *s)
                               DISPLAY_DATUM_TL);
         }
     }
-    draw_header_sleep();
 }
 
 /* ------------------------------------------------------------- RADIO */

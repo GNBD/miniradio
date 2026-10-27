@@ -35,10 +35,7 @@ void ui_draw_side_list_title(const char *title, const ui_list_t *l,
     if (W < 40) W = 40;
     if (H < 24) H = 24;
     const int R = X + W;
-    if (!themed) {
-        draw_header_tabs(UI_TAB_RADIO, s);
-        draw_header_sleep();
-    }
+    if (!themed) draw_header_tabs(UI_TAB_RADIO, s);
 
     display_fill_rect(X, Y, W, H, UI_BG);
     display_fill_rect(X, Y, 1, H, UI_LINE);
