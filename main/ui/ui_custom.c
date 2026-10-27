@@ -585,6 +585,27 @@ static int opt_int(const char *s, const char *key, int def)
     return def;
 }
 
+/* 배터리 아이콘: 펌웨어 battery_pill 과 동일한 모양 */
+static void draw_batt_icon(const uc_widget_t *w, const ui_state_t *s)
+{
+    int pct = s->have_battery ? (int)s->battery.percent : 0;
+    uint16_t c = col(UC_OK);
+    if (pct <= 15) {
+        c = col(UC_WARN);
+    } else if (pct <= 35) {
+        c = col(UC_ACCENT);
+    }
+    display_fill_round_rect(w->x, w->y, 26, 11, 3, col(UC_PANEL));
+    display_draw_round_rect(w->x, w->y, 26, 11, 3, col(UC_LINE));
+    display_fill_rect((int16_t)(w->x + 26), (int16_t)(w->y + 3), 2, 5,
+                      col(UC_LINE));
+    int fill = (pct * 20) / 100;
+    if (fill > 0) {
+        display_fill_round_rect((int16_t)(w->x + 2), (int16_t)(w->y + 2),
+                                (uint16_t)fill, 7, 2, c);
+    }
+}
+
 static void draw_decode_panel(const uc_widget_t *w)
 {
     /* 옵션 문자열: "gpio=4;mode=0;lines=4" (위젯 text 필드) */
@@ -777,6 +798,9 @@ void ui_custom_render(const ui_state_t *s)
             break;
         case UC_DECODE:
             draw_decode_panel(w);
+            break;
+        case UC_BATT_ICON:
+            draw_batt_icon(w, s);
             break;
         }
     }

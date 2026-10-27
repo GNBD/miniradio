@@ -9,6 +9,10 @@ function bindOptions() {
 const COLORS = ["bg", "panel", "fg", "muted", "line", "accent", "accenth",
   "ok", "warn", "red", "track", "hsel", "none"];
 
+function colorOptions() {
+  return (window.RecentColors ? RecentColors.options(COLORS) : COLORS);
+}
+
 const Props = {
   el(id) { return document.getElementById(id); },
 
@@ -155,20 +159,20 @@ const Props = {
       body.appendChild(this.row("Text", this.input(w.text || "", (v) => { w.text = v; upd(); })));
       body.appendChild(this.row("Size", this.select(["tiny", "small", "large"], w.size || "tiny", (v) => { w.size = v; upd(); })));
       body.appendChild(this.row("Align", this.select([["l", "Left"], ["c", "Center"], ["r", "Right"]], w.align || "l", (v) => { w.align = v; upd(); })));
-      body.appendChild(this.row("Color", this.select(COLORS, w.color || "fg", (v) => { w.color = v; upd(); })));
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "fg", (v) => { RecentColors.add(v); w.color = v; upd(); })));
       body.appendChild(this.row("Chip", this.select([["", "off"], ["1", "on"]], w.chip ? "1" : "", (v) => { w.chip = v ? 1 : undefined; upd(); })));
     } else if (w.t === "rect") {
-      body.appendChild(this.row("Fill", this.select(COLORS, w.fill || "panel", (v) => { w.fill = v; upd(); })));
-      body.appendChild(this.row("Stroke", this.select(COLORS, w.stroke || "none", (v) => { w.stroke = v; upd(); })));
+      body.appendChild(this.row("Fill", this.select(colorOptions(), w.fill || "panel", (v) => { RecentColors.add(v); w.fill = v; upd(); })));
+      body.appendChild(this.row("Stroke", this.select(colorOptions(), w.stroke || "none", (v) => { RecentColors.add(v); w.stroke = v; upd(); })));
       body.appendChild(this.row("Radius", this.input(w.r || 0, (v) => { w.r = +v; upd(); }, "number")));
     } else if (w.t === "bar") {
       body.appendChild(this.row("Bind", this.select(bindOptions(), w.bind || "", (v) => { w.bind = v || undefined; upd(); })));
       body.appendChild(this.row("Max", this.input(w.max || 63, (v) => { w.max = +v; upd(); }, "number")));
-      body.appendChild(this.row("Color", this.select(COLORS, w.color || "ok", (v) => { w.color = v; upd(); })));
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "ok", (v) => { RecentColors.add(v); w.color = v; upd(); })));
     } else if (w.t === "line") {
-      body.appendChild(this.row("Color", this.select(COLORS, w.color || "line", (v) => { w.color = v; upd(); })));
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "line", (v) => { RecentColors.add(v); w.color = v; upd(); })));
     } else if (w.t === "wifi") {
-      body.appendChild(this.row("Color", this.select(COLORS, w.color || "accenth", (v) => { w.color = v; upd(); })));
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "accenth", (v) => { RecentColors.add(v); w.color = v; upd(); })));
     } else if (w.t === "decode") {
       const info = document.createElement("div");
       info.className = "empty";
@@ -176,7 +180,7 @@ const Props = {
       body.appendChild(info);
       body.appendChild(this.row("Options", this.input(w.text || "gpio=4;mode=0;lines=4",
         (v) => { w.text = v; upd(); })));
-      body.appendChild(this.row("Color", this.select(COLORS, w.color || "accent",
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "accent",
         (v) => { w.color = v; upd(); })));
     } else if (w.t === "menu") {
       const info = document.createElement("div");

@@ -22,7 +22,7 @@ extern "C" {
 typedef enum {
     UC_RECT = 0, UC_TEXT, UC_BAR, UC_LINE_W,
     UC_FREQ, UC_RSQ, UC_RDS, UC_SIG, UC_BANDMAP, UC_CUSTOM,
-    UC_MENU_GUIDE, UC_WIFI, UC_DECODE
+    UC_MENU_GUIDE, UC_WIFI, UC_DECODE, UC_BATT_ICON
 } uc_type_t;
 
 typedef enum {

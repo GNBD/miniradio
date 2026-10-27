@@ -188,6 +188,21 @@ const Render = {
         }
         break;
       }
+      case "batt_icon": {
+        const c = this.ctx;
+        const pct = Math.max(0, Math.min(100, Number(s.batt) || 0));
+        c.setTransform(2, 0, 0, 2, 0, 0);
+        c.fillStyle = col(w.fill, "cell");
+        c.fillRect(w.x, w.y, 26, 11);
+        c.strokeStyle = col(w.stroke, "line");
+        c.strokeRect(w.x + .5, w.y + .5, 25, 10);
+        c.fillRect(w.x + 26, w.y + 3, 2, 5);
+        c.fillStyle = pct <= 15 ? col(w.color, "warn")
+                    : pct <= 35 ? col(w.color, "accent") : col(w.color, "ok");
+        c.fillRect(w.x + 2, w.y + 2, 20 * pct / 100, 7);
+        c.setTransform(1, 0, 0, 1, 0, 0);
+        break;
+      }
       case "decode": {
         const c = this.ctx;
         c.setTransform(2, 0, 0, 2, 0, 0);

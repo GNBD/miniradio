@@ -122,7 +122,7 @@ static bool parse_text(const char *text, size_t len, uc_widget_t *out,
         for (int i = 0; i < nnum; ++i) {
             if (!parse_num(f[i], &v[i])) { free(buf); return false; }
         }
-        if (v[0] < 0 || v[0] > UC_DECODE) { free(buf); return false; }
+        if (v[0] < 0 || v[0] > UC_BATT_ICON) { free(buf); return false; }
         if (v[1] < -32768 || v[1] > 32767 || v[2] < -32768 || v[2] > 32767) {
             free(buf); return false;
         }
