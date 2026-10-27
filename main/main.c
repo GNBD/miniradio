@@ -57,6 +57,7 @@
 #include "menu_data.h"
 #include "mod_runtime.h"
 #include "ui_runtime.h"
+#include "ui_exlu.h"
 #include "decode.h"
 #include "weather.h"
 #include "hmi.h"
@@ -411,6 +412,9 @@ void app_main(void)
         memset(&s_ats_list, 0, sizeof(s_ats_list));
     }
     eibi_fs_mount();
+    if (s_theme == UI_THEME_CUSTOM) {
+        exlu_boot_apply_theme();   /* littlefs 의 테마 EXLU 자동 적용 */
+    }
     ui_runtime_init(s_theme == UI_THEME_CUSTOM);
     if (s_theme == UI_THEME_CUSTOM && !ui_runtime_enabled()) {
         s_theme = 0;
