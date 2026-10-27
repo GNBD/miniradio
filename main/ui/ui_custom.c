@@ -425,7 +425,12 @@ static void draw_rds(const uc_widget_t *w, const ui_state_t *s)
             }
             rot[n] = '\0';
             fit(eb, sizeof(eb), rot, DISPLAY_FONT_TINY, w->w - 8);
-            ++eibi_off[idx];
+            /* 속도 절반: 2회 렌더마다 1자 이동 */
+            static int eibi_skip[8];
+            if (++eibi_skip[idx] >= 2) {
+                eibi_skip[idx] = 0;
+                ++eibi_off[idx];
+            }
         } else {
             fit(eb, sizeof(eb), st, DISPLAY_FONT_TINY, w->w - 8);
         }
@@ -458,7 +463,11 @@ static void draw_rds(const uc_widget_t *w, const ui_state_t *s)
             }
             rot[n] = '\0';
             fit(pr, sizeof(pr), rot, DISPLAY_FONT_TINY, w->w - 8);
-            ++rds_off[idx];
+            static int rds_skip[8];
+            if (++rds_skip[idx] >= 2) {
+                rds_skip[idx] = 0;
+                ++rds_off[idx];
+            }
         } else {
             fit(pr, sizeof(pr), ps, DISPLAY_FONT_TINY, w->w - 8);
         }
