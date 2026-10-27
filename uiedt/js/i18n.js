@@ -8,7 +8,7 @@
  *   I18N.set("en")           -> switch + persist + re-render
  */
 const I18N = {
-  lang: "ko",
+  lang: "en",
 
   dict: {
     "타입 (읽기 전용)": "Type (read only)",

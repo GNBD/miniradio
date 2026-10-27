@@ -75,17 +75,17 @@ const MODULES = [
     make: () => [
       W({ t: "text", x: 228, y: 24, w: 84, h: 10, bind: "status", size: "tiny", color: "muted", align: "l" }),
     ] },
-  { id: "decode", cat: "APP", name: "DECODE panel", sub: "디코드 상태/레벨/텍스트",
+  { id: "decode", cat: "APP", name: "DECODE panel", sub: "decode status / level / text",
     colors: ["panel", "line", "accent", "ok", "fg", "muted"],
     make: () => [ W({ t: "decode", x: 6, y: 72, w: 308, h: 96, fill: "panel", stroke: "line", color: "accent" }) ] },
-  { id: "sleep", cat: "UI", name: "Sleep 남은 시간", sub: "SLEEP 초 표시",
+  { id: "sleep", cat: "UI", name: "Sleep remaining", sub: "SLEEP seconds",
     colors: ["accent"],
     make: () => [ W({ t: "text", x: 240, y: 42, w: 72, h: 10, bind: "sleep", size: "tiny", color: "accent", align: "r" }) ] },
-  { id: "batt_icon", cat: "UI", name: "Quad bar (battery)", sub: "사각 게이지 · 공용 바",
+  { id: "batt_icon", cat: "UI", name: "Quad bar (battery)", sub: "square gauge / generic bar",
     colors: ["ok", "warn", "accent", "panel", "line"],
     make: () => [ W({ t: "batt_icon", x: 292, y: 5, w: 28, h: 11, bind: "batt", max: 100,
                       fill: "panel", stroke: "line", color: "ok" }) ] },
-  { id: "decode", cat: "APP", name: "DECODE panel", sub: "GPIO/모드를 프로퍼티에서 설정",
+  { id: "decode", cat: "APP", name: "DECODE panel", sub: "set GPIO/mode in properties",
     colors: ["panel", "line", "accent", "ok", "fg", "muted"],
     make: () => [ W({ t: "decode", x: 6, y: 72, w: 308, h: 96, fill: "panel", stroke: "line",
                       color: "accent", text: "gpio=4;mode=0;lines=4" }) ] },
@@ -113,11 +113,11 @@ const MODULES = [
 ];
 
 const TEMPLATES = [
-  { id: "tpl-default", name: "Default (기본 UI)", sub: "firmware 기본 화면",
+  { id: "tpl-default", name: "Default (basic UI)", sub: "firmware default screen",
     ids: ["headerfull", "bandfull", "freq", "rsq", "params", "rds", "sig", "status"] },
-  { id: "tpl-bandmap", name: "Radio + Band map", sub: "하단 전체 밴드맵",
+  { id: "tpl-bandmap", name: "Radio + Band map", sub: "full-width band map",
     ids: ["headerfull", "band", "badges", "freq", "rsq", "params", "bandmap"] },
-  { id: "tpl-minimal", name: "Minimal", sub: "주파수 + RSSI만",
+  { id: "tpl-minimal", name: "Minimal", sub: "frequency + RSSI only",
     ids: ["headerfull", "freq", "rsq"] },
 ];
 
@@ -134,17 +134,17 @@ const SET_LABELS = [
 ];
 
 const BINDINGS = [
-  ["freq", "주파수 (문자열)"], ["mode", "모드 FM/AM/LSB/USB"], ["band", "밴드명"],
-  ["rssi", "RSSI 0-63"], ["snr", "SNR 0-63"], ["clock", "시계 HH:MM"],
-  ["date", "날짜"], ["ps", "RDS PS"], ["rt", "RDS RT"], ["pty", "RDS PTY"],
-  ["preset", "프리셋 번호"], ["pname", "프리셋 이름"], ["ats", "ATS 번호"],
-  ["batt", "배터리 %"], ["vol", "볼륨"], ["bw", "대역폭"], ["step", "스텝"],
-  ["bfo", "BFO"], ["agc", "AGC"], ["sm", "소프트뮤트"], ["afc", "AFC"],
-  ["avc", "AVC"], ["sq", "스퀠치"], ["stereo", "스테레오"],
+  ["freq", "Frequency (string)"], ["mode", "Mode FM/AM/LSB/USB"], ["band", "Band name"],
+  ["rssi", "RSSI 0-63"], ["snr", "SNR 0-63"], ["clock", "Clock HH:MM"],
+  ["date", "Date"], ["ps", "RDS PS"], ["rt", "RDS RT"], ["pty", "RDS PTY"],
+  ["preset", "Preset number"], ["pname", "Preset name"], ["ats", "ATS number"],
+  ["batt", "Battery %"], ["vol", "Volume"], ["bw", "Bandwidth"], ["step", "Step"],
+  ["bfo", "BFO"], ["agc", "AGC"], ["sm", "Softmute"], ["afc", "AFC"],
+  ["avc", "AVC"], ["sq", "Squelch"], ["stereo", "Stereo"],
   ["line1", "BW/ST"], ["line2", "BFO/AGC/SM"], ["line3", "AFC/AVC/SQ"],
-  ["eibi", "EiBi 방송"], ["toast", "토스트"], ["wifi", "Wi-Fi 상태"],
-  ["status", "VOL/BRT 상태"], ["battv", "배터리 전압"],
-  ["sleep", "Sleep 남은 초"], ["dec_level", "디코드 레벨 0-100"],
+  ["eibi", "EiBi station"], ["toast", "Toast"], ["wifi", "Wi-Fi state"],
+  ["status", "VOL/BRT status"], ["battv", "Battery voltage"],
+  ["sleep", "Sleep remaining (s)"], ["dec_level", "Decode level 0-100"],
 ];
 
 const MOCK = {
