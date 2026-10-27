@@ -1,30 +1,30 @@
 /*
  * SPDX-License-Identifier: MIT
- * blocks.js - 경량 블록 편집기 (Scratch 스타일) + Lua 생성.
+ * blocks.js - 블록 편집기 (엔트리 스타일 드래그앤드롭) + Lua 생성.
  *
- * 에셋(위젯) 선택 -> 이벤트 블록 -> 동작 블록 스택 -> Lua 코드 생성.
- * 생성 코드는 #SCRIPT 에 저장되고, 위젯 events 필드로 디스패치된다.
+ * 팔레트에서 끌어다 놓기, 블록 순서 바꾸기, 제어 블록 안에 넣기 모두 지원.
  */
 (function () {
   const $ = (id) => document.getElementById(id);
 
-  /* 블록 정의: kind, 라벨, 파라미터 */
   const PALETTE = [
-    { k: "radio.tune", label: "라디오 주파수 설정", args: [{ n: "hz", t: "number", v: 89100000 }] },
+    { k: "radio.tune", label: "라디오 주파수", args: [{ n: "hz", t: "number", v: 89100000 }] },
     { k: "radio.seek", label: "시크", args: [{ n: "up", t: "bool", v: true }] },
-    { k: "radio.mode", label: "모드 변경", args: [{ n: "mode", t: "select", v: "FM", opts: ["FM", "AM"] }] },
+    { k: "radio.mode", label: "모드", args: [{ n: "mode", t: "select", v: "FM", opts: ["FM", "AM"] }] },
     { k: "radio.vol", label: "볼륨", args: [{ n: "v", t: "number", v: 40 }] },
     { k: "gpio.write", label: "GPIO 출력", args: [{ n: "pin", t: "number", v: 4 }, { n: "level", t: "number", v: 1 }] },
+    { k: "gpio.read", label: "GPIO 읽기", args: [{ n: "pin", t: "number", v: 4 }] },
     { k: "w.text", label: "위젯 텍스트", args: [{ n: "text", t: "text", v: "HELLO" }] },
     { k: "w.visible", label: "위젯 표시", args: [{ n: "on", t: "bool", v: true }] },
+    { k: "if", label: "만약", args: [{ n: "cond", t: "text", v: "true" }], children: true, color: "ctrl" },
+    { k: "repeat", label: "반복", args: [{ n: "n", t: "number", v: 3 }], children: true, color: "ctrl" },
+    { k: "setvar", label: "변수 설정", args: [{ n: "name", t: "text", v: "n" }, { n: "value", t: "number", v: 0 }] },
     { k: "wait", label: "대기(ms)", args: [{ n: "ms", t: "number", v: 200 }] },
     { k: "log", label: "로그", args: [{ n: "msg", t: "text", v: "event" }] },
   ];
 
-  const EVENTS = ["click", "rotate", "long", "tick"];
-
-  /* 상태: { uid, event, blocks: [{k, args:{}}] } */
   let s_model = [];
+  let s_drag = null;   /* { kind } 새 블록 | { list, index } 이동 */
 
   function uiTargets() {
     if (!window.ED || !ED.project) return [];
@@ -36,28 +36,11 @@
 
   function ensureEntry(uid, event) {
     let e = s_model.find((x) => x.uid === uid && x.event === event);
-    if (!e) {
-      e = { uid, event, blocks: [] };
-      s_model.push(e);
-    }
+    if (!e) { e = { uid, event, blocks: [] }; s_model.push(e); }
     return e;
   }
 
-  function currentEntry() {
-    const uid = parseInt($("blkWidget").value, 10) || 0;
-    const ev = $("blkEvent").value;
-    return ensureEntry(uid, ev);
-  }
-
-  function funcName(uid, event) {
-    return "w" + uid + "_" + event;
-  }
-
-  function luaArg(a, v) {
-    if (a.t === "number") return String(parseInt(v, 10) || 0);
-    if (a.t === "bool") return v ? "true" : "false";
-    return JSON.stringify(String(v == null ? "" : v));
-  }
+  function funcName(uid, event) { return "w" + uid + "_" + event; }
 
   function argValues(blk) {
     const def = PALETTE.find((p) => p.k === blk.k);
@@ -65,45 +48,100 @@
       blk.args && blk.args[a.n] != null ? blk.args[a.n] : a.v);
   }
 
-  /* 블록 스택 -> Lua 본문 */
-  function blockToLua(blk, uid, indent) {
+  const num = (v) => String(parseInt(v, 10) || 0);
+  const q = (v) => JSON.stringify(String(v == null ? "" : v));
+
+  function listToLua(list, uid, indent) {
     const pad = "  ".repeat(indent);
-    const vals = argValues(blk);
-    switch (blk.k) {
-    case "radio.tune": return pad + "radio.tune(" + vals[0] + ")";
-    case "radio.seek": return pad + "radio.seek(" + (vals[0] ? "true" : "false") + ")";
-    case "radio.mode": return pad + "log(\"mode=" + vals[0] + "\")";
-    case "radio.vol": return pad + "log(\"vol=" + vals[0] + "\")";
-    case "gpio.write": return pad + "gpio.write(" + vals[0] + ", " + vals[1] + ")";
-    case "w.text": return pad + "w.text(" + uid + ", " + JSON.stringify(String(vals[0])) + ")";
-    case "w.visible": return pad + "w.visible(" + uid + ", " + (vals[0] ? "true" : "false") + ")";
-    case "wait": return pad + "log(\"wait " + vals[0] + "ms\")";
-    case "log": return pad + "log(" + JSON.stringify(String(vals[0])) + ")";
-    default: return pad + "-- unknown block " + blk.k;
+    const out = [];
+    for (const blk of list) {
+      const v = argValues(blk);
+      switch (blk.k) {
+      case "radio.tune": out.push(pad + "radio.tune(" + num(v[0]) + ")"); break;
+      case "radio.seek": out.push(pad + "radio.seek(" + (v[0] ? "true" : "false") + ")"); break;
+      case "radio.mode": out.push(pad + "log(\"mode=" + String(v[0]) + "\")"); break;
+      case "radio.vol": out.push(pad + "log(\"vol=" + num(v[0]) + "\")"); break;
+      case "gpio.write": out.push(pad + "gpio.write(" + num(v[0]) + ", " + num(v[1]) + ")"); break;
+      case "gpio.read": out.push(pad + "log(\"gpio\" .. gpio.read(" + num(v[0]) + "))"); break;
+      case "w.text": out.push(pad + "w.text(" + uid + ", " + q(v[0]) + ")"); break;
+      case "w.visible": out.push(pad + "w.visible(" + uid + ", " + (v[0] ? "true" : "false") + ")"); break;
+      case "if":
+        out.push(pad + "if " + String(v[0] || "true") + " then");
+        out.push(...listToLua(blk.do || [], uid, indent + 1));
+        out.push(pad + "end");
+        break;
+      case "repeat":
+        out.push(pad + "for _i = 1, " + num(v[0]) + " do");
+        out.push(...listToLua(blk.do || [], uid, indent + 1));
+        out.push(pad + "end");
+        break;
+      case "setvar": out.push(pad + String(v[0] || "n") + " = " + num(v[1])); break;
+      case "wait": out.push(pad + "log(\"wait " + num(v[0]) + "ms\")"); break;
+      case "log": out.push(pad + "log(" + q(v[0]) + ")"); break;
+      default: out.push(pad + "-- unknown block " + blk.k);
+      }
     }
+    return out;
   }
 
-  /* 전체 모델 -> Lua 소스 */
   function generateLua() {
     const parts = ["-- generated by EXTENDED Editor blocks"];
     for (const e of s_model) {
       if (!e.blocks.length) continue;
       parts.push("");
       parts.push("function " + funcName(e.uid, e.event) + "(uid, arg)");
-      for (const b of e.blocks) parts.push(blockToLua(b, e.uid, 1));
+      parts.push(...listToLua(e.blocks, e.uid, 1));
       parts.push("end");
     }
     return parts.join("\n") + "\n";
   }
 
-  /* events 문자열 (위젯 -> 핸들러) */
   function eventsFor(uid) {
-    const evs = s_model.filter((e) => e.uid === uid && e.blocks.length)
-      .map((e) => e.event + "=" + funcName(e.uid, e.event));
-    return evs.join(",");
+    return s_model.filter((e) => e.uid === uid && e.blocks.length)
+      .map((e) => e.event + "=" + funcName(e.uid, e.event)).join(",");
   }
 
-  /* ---------------- UI ---------------- */
+  /* ---------------- 드래그앤드롭 ---------------- */
+
+  function startDrag(ev, payload) {
+    s_drag = payload;
+    ev.dataTransfer.effectAllowed = "move";
+    ev.dataTransfer.setData("text/plain", "blk");
+  }
+
+  function dropInto(ev, list, index) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.currentTarget.classList.remove("over");
+    if (!s_drag) return;
+    let idx = index;
+    if (idx == null || idx < 0 || idx > list.length) idx = list.length;
+
+    if (s_drag.kind) {
+      list.splice(idx, 0, { k: s_drag.kind, args: {}, do: [] });
+    } else if (s_drag.list) {
+      if (s_drag.list === list && s_drag.index === idx) return;
+      const [item] = s_drag.list.splice(s_drag.index, 1);
+      if (s_drag.list === list && s_drag.index < idx) idx -= 1;
+      list.splice(idx, 0, item);
+    }
+    s_drag = null;
+    renderStack();
+  }
+
+  function markOver(ev) {
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = "move";
+    ev.currentTarget.classList.add("over");
+  }
+
+  function attachZone(el, list, indexFn) {
+    el.addEventListener("dragover", markOver);
+    el.addEventListener("dragleave", (e) => e.currentTarget.classList.remove("over"));
+    el.addEventListener("drop", (ev) => dropInto(ev, list, indexFn ? indexFn() : null));
+  }
+
+  /* ---------------- 렌더 ---------------- */
 
   function renderWidgets() {
     const sel = $("blkWidget");
@@ -118,85 +156,106 @@
     if (cur) sel.value = cur;
   }
 
-  function renderStack() {
-    const uid = parseInt($("blkWidget").value, 10) || 0;
-    if (!uid) {
-      $("blkStack").innerHTML = "<div class='phint'>위젯을 선택하세요.</div>";
-      return;
+  function makeInput(a, v, blk, onChange) {
+    let inp;
+    if (a.t === "bool") {
+      inp = document.createElement("input");
+      inp.type = "checkbox";
+      inp.checked = !!v;
+      inp.onchange = () => { blk.args = blk.args || {}; blk.args[a.n] = inp.checked; onChange(); };
+    } else if (a.t === "select") {
+      inp = document.createElement("select");
+      a.opts.forEach((o) => {
+        const op = document.createElement("option");
+        op.value = o; op.textContent = o;
+        inp.append(op);
+      });
+      inp.value = v;
+      inp.onchange = () => { blk.args = blk.args || {}; blk.args[a.n] = inp.value; onChange(); };
+    } else {
+      inp = document.createElement("input");
+      inp.type = a.t === "number" ? "number" : "text";
+      inp.value = v;
+      inp.oninput = () => { blk.args = blk.args || {}; blk.args[a.n] = inp.value; onChange(); };
     }
-    const e = ensureEntry(uid, $("blkEvent").value);
-    const box = $("blkStack");
-    box.innerHTML = "";
-    if (!e.blocks.length) {
-      box.innerHTML = "<div class='phint'>블록을 추가하세요.</div>";
-    }
-    e.blocks.forEach((b, i) => {
-      const def = PALETTE.find((p) => p.k === b.k) || { label: b.k, args: [] };
+    inp.draggable = false;
+    return inp;
+  }
+
+  function renderList(list, container, depth) {
+    container.style.marginLeft = (depth * 14) + "px";
+    attachZone(container, list, null);
+
+    list.forEach((blk, i) => {
+      const def = PALETTE.find((p) => p.k === blk.k) || { label: blk.k, args: [] };
       const row = document.createElement("div");
-      row.className = "blk";
+      row.className = "blk" + (def.color === "ctrl" ? " ctrl" : "");
+      row.draggable = true;
+      row.addEventListener("dragstart", (ev) => startDrag(ev, { list, index: i }));
+      row.addEventListener("dragend", () => { s_drag = null; });
+      attachZone(row, list, () => i);
+
+      const grip = document.createElement("span");
+      grip.className = "grip";
+      grip.textContent = "⣿";
+      row.append(grip);
+
       const name = document.createElement("span");
       name.className = "blkname";
       name.textContent = def.label;
       row.append(name);
 
       def.args.forEach((a) => {
-        const v = b.args && b.args[a.n] != null ? b.args[a.n] : a.v;
-        let inp;
-        if (a.t === "bool") {
-          inp = document.createElement("input");
-          inp.type = "checkbox";
-          inp.checked = !!v;
-          inp.onchange = () => { b.args = b.args || {}; b.args[a.n] = inp.checked; renderCode(); };
-        } else if (a.t === "select") {
-          inp = document.createElement("select");
-          a.opts.forEach((o) => {
-            const op = document.createElement("option");
-            op.value = o; op.textContent = o;
-            inp.append(op);
-          });
-          inp.value = v;
-          inp.onchange = () => { b.args = b.args || {}; b.args[a.n] = inp.value; renderCode(); };
-        } else {
-          inp = document.createElement("input");
-          inp.type = a.t === "number" ? "number" : "text";
-          inp.value = v;
-          inp.oninput = () => { b.args = b.args || {}; b.args[a.n] = inp.value; renderCode(); };
-        }
-        row.append(inp);
+        row.append(makeInput(a, blk.args && blk.args[a.n] != null ? blk.args[a.n] : a.v,
+          blk, renderCode));
       });
 
-      const up = document.createElement("button");
-      up.className = "pbtn"; up.textContent = "↑";
-      up.onclick = () => { if (i > 0) { [e.blocks[i - 1], e.blocks[i]] = [e.blocks[i], e.blocks[i - 1]]; renderStack(); } };
-      const dn = document.createElement("button");
-      dn.className = "pbtn"; dn.textContent = "↓";
-      dn.onclick = () => { if (i < e.blocks.length - 1) { [e.blocks[i + 1], e.blocks[i]] = [e.blocks[i], e.blocks[i + 1]]; renderStack(); } };
       const del = document.createElement("button");
-      del.className = "pbtn danger"; del.textContent = "×";
-      del.onclick = () => { e.blocks.splice(i, 1); renderStack(); };
-      row.append(up, dn, del);
-      box.append(row);
+      del.className = "pbtn danger";
+      del.textContent = "×";
+      del.draggable = false;
+      del.onclick = () => { list.splice(i, 1); renderStack(); };
+      row.append(del);
+      container.append(row);
+
+      if (def.children) {
+        blk.do = blk.do || [];
+        const sub = document.createElement("div");
+        sub.className = "blkstack sub";
+        container.append(sub);
+        renderList(blk.do, sub, depth + 1);
+      }
     });
+
+    if (!list.length) {
+      const hint = document.createElement("div");
+      hint.className = "phint";
+      hint.textContent = depth ? "(여기에 끌어다 놓기)" : "블록을 끌어다 놓으세요.";
+      container.append(hint);
+    }
+  }
+
+  function renderStack() {
+    const uid = parseInt($("blkWidget").value, 10) || 0;
+    const box = $("blkStack");
+    box.innerHTML = "";
+    if (!uid) {
+      box.innerHTML = "<div class='phint'>위젯을 선택하세요.</div>";
+      return;
+    }
+    const e = ensureEntry(uid, $("blkEvent").value);
+    const root = document.createElement("div");
+    root.className = "blkstack";
+    box.append(root);
+    renderList(e.blocks, root, 0);
     renderCode();
   }
 
-  function renderCode() {
-    $("blkCode").value = generateLua();
-  }
-
-  function addBlock(kind) {
-    const uid = parseInt($("blkWidget").value, 10) || 0;
-    if (!uid) { $("blkMsg").textContent = "위젯을 먼저 선택하세요."; return; }
-    const e = ensureEntry(uid, $("blkEvent").value);
-    e.blocks.push({ k: kind, args: {} });
-    renderStack();
-  }
+  function renderCode() { $("blkCode").value = generateLua(); }
 
   function applyToScript() {
     const uid = parseInt($("blkWidget").value, 10) || 0;
-    const lua = generateLua();
-    $("exScript").value = lua;
-    /* 선택 위젯의 events 갱신 */
+    $("exScript").value = generateLua();
     if (window.ED && ED.project && uid) {
       const w = (ED.project.items || []).find((x) => x.uid === uid);
       if (w) {
@@ -207,6 +266,7 @@
             const [k, v] = kv.split("=");
             w.events[k] = v;
           });
+          if (ED.dirty !== undefined) { ED.dirty = true; ED.uiDirty(); }
         }
       }
     }
@@ -216,18 +276,27 @@
   function init() {
     if (!$("blkWidget")) return;
     renderWidgets();
-    const add = $("blkPalette");
+    const pal = $("blkPalette");
     PALETTE.forEach((p) => {
       const b = document.createElement("button");
-      b.className = "blkadd";
-      b.textContent = "+ " + p.label;
-      b.onclick = () => addBlock(p.k);
-      add.append(b);
+      b.className = "blkadd" + (p.color === "ctrl" ? " ctrl" : "");
+      b.textContent = "⣿ " + p.label;
+      b.style.cursor = "grab";
+      b.addEventListener("dragstart", (ev) => startDrag(ev, { kind: p.k }));
+      b.addEventListener("dragend", () => { s_drag = null; });
+      b.addEventListener("click", () => {
+        /* 터치/키보드 대체: 클릭 시 맨 끝에 추가 */
+        const uid = parseInt($("blkWidget").value, 10) || 0;
+        if (!uid) { $("blkMsg").textContent = "위젯을 먼저 선택하세요."; return; }
+        ensureEntry(uid, $("blkEvent").value).blocks.push({ k: p.k, args: {}, do: [] });
+        renderStack();
+      });
+      b.draggable = true;
+      pal.append(b);
     });
     $("blkWidget").onchange = renderStack;
     $("blkEvent").onchange = renderStack;
     $("blkApply").onclick = applyToScript;
-    $("tabLayout").addEventListener("click", () => renderWidgets());
     renderStack();
   }
 
