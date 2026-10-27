@@ -35,6 +35,9 @@ bool ui_runtime_has(const char *name);
 
 /* menu/settings panel from the runtime layout (theme mode) */
 bool ui_runtime_panel(bool settings, int *x, int *y, int *w, int *h, int *orient);
+
+/* uid 로 위젯 찾기 (Lua 이벤트 바인딩용) */
+const uc_widget_t *ui_runtime_find(uint16_t uid);
 void ui_runtime_apply_theme(void);
 
 /* raw file access for the editor (ext = "layout" or "mrpack") */

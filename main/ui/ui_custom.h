@@ -70,6 +70,14 @@ typedef struct {
 /** @brief 커스텀 레이아웃이 활성인지 (레이아웃 헤더의 UI_CUSTOM_ENABLE) */
 bool ui_custom_active(void);
 
+void ui_widget_override_text(uint16_t uid, const char *text);
+void ui_widget_override_visible(uint16_t uid, bool visible);
+void ui_widget_override_color(uint16_t uid, uint8_t color);
+int  ui_widget_override_hidden(uint16_t uid);
+const char *ui_widget_override_text_of(uint16_t uid);
+int  ui_widget_override_color_of(uint16_t uid, int def);
+int  ui_widget_bind_value(const uc_widget_t *w);
+
 /** @brief 커스텀 레이아웃으로 라디오 화면 전체를 그린다. */
 void ui_custom_render(const ui_state_t *s);
 

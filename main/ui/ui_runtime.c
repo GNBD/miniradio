@@ -443,6 +443,19 @@ bool ui_runtime_delete(const char *name)
     return true;
 }
 
+const uc_widget_t *ui_runtime_find(uint16_t uid)
+{
+    if (uid == 0) {
+        return NULL;
+    }
+    for (int i = 0; i < s_count; ++i) {
+        if (s_widgets[i].uid == uid) {
+            return &s_widgets[i];
+        }
+    }
+    return NULL;
+}
+
 bool ui_runtime_panel(bool settings, int *x, int *y, int *w, int *h, int *orient)
 {
     if (!ui_runtime_enabled()) return false;

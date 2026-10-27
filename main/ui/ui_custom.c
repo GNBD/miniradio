@@ -26,6 +26,85 @@ extern int32_t s_bfo;
 extern uint8_t s_brightness;
 const char *bw_label(void);
 
+/* ---------------- Lua 위젯 오버라이드 ---------------- */
+
+#define UI_OV_MAX 32
+
+typedef struct {
+    uint16_t uid;
+    char     text[32];
+    uint8_t  color;
+    int8_t   visible;   /* -1 = 미설정 */
+} ui_ov_t;
+
+static ui_ov_t s_ov[UI_OV_MAX];
+
+static ui_ov_t *ov_get(uint16_t uid, bool create)
+{
+    for (int i = 0; i < UI_OV_MAX; ++i) {
+        if (s_ov[i].uid == uid) {
+            return &s_ov[i];
+        }
+    }
+    if (!create) {
+        return NULL;
+    }
+    for (int i = 0; i < UI_OV_MAX; ++i) {
+        if (s_ov[i].uid == 0) {
+            s_ov[i].uid = uid;
+            s_ov[i].visible = -1;
+            s_ov[i].color = 0xFF;
+            s_ov[i].text[0] = '\0';
+            return &s_ov[i];
+        }
+    }
+    return NULL;
+}
+
+void ui_widget_override_text(uint16_t uid, const char *text)
+{
+    ui_ov_t *o = ov_get(uid, true);
+    if (!o) {
+        return;
+    }
+    snprintf(o->text, sizeof(o->text), "%s", text ? text : "");
+}
+
+void ui_widget_override_visible(uint16_t uid, bool visible)
+{
+    ui_ov_t *o = ov_get(uid, true);
+    if (o) {
+        o->visible = visible ? 1 : 0;
+    }
+}
+
+void ui_widget_override_color(uint16_t uid, uint8_t color)
+{
+    ui_ov_t *o = ov_get(uid, true);
+    if (o) {
+        o->color = color;
+    }
+}
+
+int ui_widget_override_hidden(uint16_t uid)
+{
+    ui_ov_t *o = ov_get(uid, false);
+    return (o && o->visible == 0) ? 1 : 0;
+}
+
+const char *ui_widget_override_text_of(uint16_t uid)
+{
+    ui_ov_t *o = ov_get(uid, false);
+    return (o && o->text[0]) ? o->text : NULL;
+}
+
+int ui_widget_override_color_of(uint16_t uid, int def)
+{
+    ui_ov_t *o = ov_get(uid, false);
+    return (o && o->color != 0xFF) ? (int)o->color : def;
+}
+
+
 bool ui_custom_active(void)
 {
     return UI_CUSTOM_ENABLE != 0 || ui_runtime_enabled();
@@ -197,6 +276,15 @@ static const char *str_bind(uint8_t b, const ui_state_t *s, char *buf, size_t n)
     default: return buf;
     }
 }
+
+int ui_widget_bind_value(const uc_widget_t *w)
+{
+    if (!w) {
+        return 0;
+    }
+    return num_bind(w->bind, &s_ui);
+}
+
 
 static void fit_pct(char *out, size_t n, const char *src, display_font_t f,
                     int maxw, uint16_t pct)
