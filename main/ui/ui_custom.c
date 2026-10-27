@@ -398,8 +398,10 @@ static void draw_rds(const uc_widget_t *w, const ui_state_t *s)
     display_draw_rect((int16_t)w->x, (int16_t)w->y, (uint16_t)w->w,
                       (uint16_t)w->h, UI_LINE);
 
+    int idx = w->uid ? (int)(w->uid % 8) : 0;
+
     if (s->mode != RADIO_MODE_FM) {
-        /* AM/SSB: EiBi 정보 카드 */
+        /* AM/SSB: EiBi 정보 카드 (uid 별 마퀴) */
         display_draw_text((int16_t)(w->x + 4), (int16_t)(w->y + 3), "EIBI",
                           DISPLAY_FONT_TINY, UI_GOLD, UI_PANEL,
                           DISPLAY_DATUM_TL);
@@ -407,8 +409,26 @@ static void draw_rds(const uc_widget_t *w, const ui_state_t *s)
                           s->clock, DISPLAY_FONT_TINY, UI_MUTED, UI_PANEL,
                           DISPLAY_DATUM_TR);
         const char *st = (s->station && s->station[0]) ? s->station : "NO DATA";
+        static int eibi_off[8];
         char eb[40];
-        fit(eb, sizeof(eb), st, DISPLAY_FONT_TINY, w->w - 8);
+        size_t len = strlen(st);
+        if (len > 3 && display_text_width(st, DISPLAY_FONT_TINY) >
+            (uint16_t)(w->w - 8)) {
+            int off = eibi_off[idx] % (int)len;
+            char rot[128];
+            size_t n = len;
+            if (n > sizeof(rot) - 1) {
+                n = sizeof(rot) - 1;
+            }
+            for (size_t i = 0; i < n; ++i) {
+                rot[i] = st[(off + i) % len];
+            }
+            rot[n] = '\0';
+            fit(eb, sizeof(eb), rot, DISPLAY_FONT_TINY, w->w - 8);
+            ++eibi_off[idx];
+        } else {
+            fit(eb, sizeof(eb), st, DISPLAY_FONT_TINY, w->w - 8);
+        }
         display_draw_text((int16_t)(w->x + 4), (int16_t)(w->y + 16), eb,
                           DISPLAY_FONT_TINY, UI_FG, UI_PANEL,
                           DISPLAY_DATUM_TL);
@@ -422,7 +442,27 @@ static void draw_rds(const uc_widget_t *w, const ui_state_t *s)
                           rds_pty_name(s->rds->pty), DISPLAY_FONT_TINY,
                           UI_MUTED, UI_PANEL, DISPLAY_DATUM_TR);
         const char *ps = (s->rds->ps_valid && s->rds->ps[0]) ? s->rds->ps : "--";
-        display_draw_text((int16_t)(w->x + 4), (int16_t)(w->y + 16), ps,
+        static int rds_off[8];
+        char pr[40];
+        size_t plen = strlen(ps);
+        if (plen > 3 && display_text_width(ps, DISPLAY_FONT_TINY) >
+            (uint16_t)(w->w - 8)) {
+            int off = rds_off[idx] % (int)plen;
+            char rot[128];
+            size_t n = plen;
+            if (n > sizeof(rot) - 1) {
+                n = sizeof(rot) - 1;
+            }
+            for (size_t i = 0; i < n; ++i) {
+                rot[i] = ps[(off + i) % plen];
+            }
+            rot[n] = '\0';
+            fit(pr, sizeof(pr), rot, DISPLAY_FONT_TINY, w->w - 8);
+            ++rds_off[idx];
+        } else {
+            fit(pr, sizeof(pr), ps, DISPLAY_FONT_TINY, w->w - 8);
+        }
+        display_draw_text((int16_t)(w->x + 4), (int16_t)(w->y + 16), pr,
                           DISPLAY_FONT_TINY, UI_FG, UI_PANEL,
                           DISPLAY_DATUM_TL);
         if (s->rds->rt_valid && s->rds->rt[0]) {
@@ -434,6 +474,7 @@ static void draw_rds(const uc_widget_t *w, const ui_state_t *s)
         }
     }
 }
+
 
 static void draw_sig(const uc_widget_t *w, const ui_state_t *s)
 {
