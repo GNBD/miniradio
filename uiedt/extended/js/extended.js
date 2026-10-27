@@ -34,8 +34,8 @@
   if (typeof TEMPLATES !== "undefined") {
     TEMPLATES.length = 0;
     TEMPLATES.push(
-      { id: "tpl-decode", name: "Decode UI (예제)", sub: "디코드 패널 + 라디오 상단",
-        ids: ["headerfull", "bandfull", "freq", "rsq", "decode"] },
+      { id: "tpl-decode", name: "Decode UI (예제)", sub: "주파수 + 디코드 패널 (파라미터 없음)",
+        ids: ["headerfull", "bandfull", "freq", "decode"] },
       { id: "tpl-decode-min", name: "Decode 최소", sub: "주파수 + 디코드 패널",
         ids: ["headerfull", "freq", "decode"] },
       { id: "tpl-blank", name: "빈 레이아웃", sub: "백지에서 시작", ids: [] }

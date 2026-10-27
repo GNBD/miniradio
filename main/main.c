@@ -58,6 +58,7 @@
 #include "mod_runtime.h"
 #include "ui_runtime.h"
 #include "ui_exlu.h"
+#include "ui_exlu_app.h"
 #include "ui_lua.h"
 #include "decode.h"
 #include "weather.h"
@@ -472,6 +473,8 @@ void app_main(void)
         brightness_apply();
         splash_show();
         splash_service_input();
+        /* littlefs 의 EXLU 선택 (없으면 즉시 통과) */
+        exlu_boot_select();
         /* 스플래시를 짧게만 노출: 이후 라디오 준비 전까지 화면을 비움 */
         display_fill_screen(UI_BG);
         display_flush();

@@ -51,6 +51,7 @@
 #include "menu_data.h"
 #include "mod_runtime.h"
 #include "ui_runtime.h"
+#include "ui_exlu_app.h"
 #include "decode.h"
 #include "weather.h"
 #include "hmi.h"
@@ -58,15 +59,24 @@ static bool s_opt_quick;
 static bool s_opt_force_radio;
 #define QUICK_ITEMS 4
 
-static int s_menu_ids[RM_COUNT];
+#define RMENU_MAX (RM_COUNT + 8)
+static int s_menu_ids[RMENU_MAX];
 static int s_set_ids[ST_COUNT];
 
 void rmenu_build(void)
 {
     /* 표시 순서/이름은 menu_data.c 의 테이블을 따른다 */
-    static const char *labels[RM_COUNT];
+    static const char *labels[RMENU_MAX];
     int n = 0;
-    for (int i = 0; i < g_menu_count && n < RM_COUNT; ++i) {
+    /* EXLU 앱: 메뉴 최상단에 표시 */
+    exlu_manifest_t apps[8];
+    int na = exlu_app_list(apps, 8);
+    for (int i = 0; i < na && n < RMENU_MAX; ++i) {
+        labels[n] = apps[i].name;
+        s_menu_ids[n] = EXLU_MENU_BASE + i;
+        ++n;
+    }
+    for (int i = 0; i < g_menu_count && n < RMENU_MAX; ++i) {
         if (!g_menu_items[i].visible) {
             continue;
         }
@@ -155,7 +165,8 @@ void rmenu_build(void)
 
     /* 값 버퍼를 표시 순서로 매핑 */
     for (int i = 0; i < s_rmenu.count; ++i) {
-        s_rv[i] = s_rbuf[s_menu_ids[i]];
+        s_rv[i] = (s_menu_ids[i] >= EXLU_MENU_BASE)
+                   ? "RUN" : s_rbuf[s_menu_ids[i]];
     }
 }
 
@@ -941,6 +952,9 @@ int menu_id_at(int cursor)
 bool menu_item_is_action(int item)
 {
     int id = menu_id_at(item);
+    if (id >= EXLU_MENU_BASE) {
+        return true;
+    }
     return (id == RM_BACK || id == RM_SEEK || id == RM_SCAN ||
             id == RM_FAV || id == RM_SETTINGS || id == RM_VOLUME ||
             (id >= RM_MOD_A && id <= RM_MOD_H));
@@ -950,6 +964,20 @@ void menu_action(int item)
 {
     int id = menu_id_at(item);
     bool mod_hit = false;
+    if (id >= EXLU_MENU_BASE) {
+        exlu_manifest_t apps[8];
+        int na = exlu_app_list(apps, 8);
+        int ai = id - EXLU_MENU_BASE;
+        if (ai >= 0 && ai < na) {
+            const char *err = exlu_app_launch(apps[ai].id);
+            if (err) {
+                toast(err);
+            } else {
+                page_radio();
+            }
+        }
+        return;
+    }
     if (id >= RM_MOD_A && id <= RM_MOD_H) {
         mod_hit = mod_runtime_ui_event(id);
     }
