@@ -56,7 +56,7 @@ const Props = {
       hint.className = "empty";
       hint.innerHTML = [
         T("모듈을 선택하세요."), "",
-        T("캔버스: 드래그 이동 · 가장자리/모서리 핸들로 크기 조절"),
+        T("캔버스: 드래그 이동 · 우하단 핸들 크기조절"),
         T("Shift+클릭 다중선택 · 방향키 미세조정"),
         T("Delete 삭제 · Ctrl+D 복제 · Ctrl+Z 실행취소"),
         T("레이어: 오른쪽 LAYERS에서 드래그 (아래 = 앞)"),
@@ -77,7 +77,7 @@ const Props = {
 
     const t = this.input(w.t, () => {}, "text");
     t.disabled = true;
-    body.appendChild(this.row(T("타입 (읽기 전용)"), t));
+    body.appendChild(this.row("Type", t));
 
     const nameInp = this.input(w.name || "", (v) => {
       w.name = v.trim() || undefined;
@@ -85,22 +85,22 @@ const Props = {
       if (window.LayerView) LayerView.render();
     });
     nameInp.placeholder = w.origin || ED.baseOf(w);
-    body.appendChild(this.row(T("이름"), nameInp));
+    body.appendChild(this.row("Name", nameInp));
 
     const g1 = document.createElement("div");
     g1.className = "grid2";
     g1.appendChild(this.input(w.x, (v) => { w.x = +v; upd(); }, "number"));
     g1.appendChild(this.input(w.y, (v) => { w.y = +v; upd(); }, "number"));
-    body.appendChild(this.row(T("X / Y 위치"), g1));
+    body.appendChild(this.row("X / Y", g1));
 
     const g2 = document.createElement("div");
     g2.className = "grid2";
     g2.appendChild(this.input(w.w, (v) => { w.w = +v; upd(); }, "number"));
     g2.appendChild(this.input(w.h, (v) => { w.h = +v; upd(); }, "number"));
-    body.appendChild(this.row(T("너비 / 높이"), g2));
+    body.appendChild(this.row("W / H", g2));
     body.querySelectorAll(".grid2 input").forEach((inp) => { inp.style.width = "100%"; });
 
-    body.appendChild(this.row(T("크기 %"), this.input(w.scale == null ? 100 : w.scale,
+    body.appendChild(this.row("Scale %", this.input(w.scale == null ? 100 : w.scale,
       (v) => {
         w.scale = Math.max(50, Math.min(200, parseInt(v, 10) || 100));
         upd();
@@ -114,7 +114,7 @@ const Props = {
         w.hidden = hide.checked;
         ED.draw();
       });
-      body.appendChild(this.row(T("숨김"), hide));
+      body.appendChild(this.row("Hide", hide));
     }
 
     {
@@ -127,7 +127,7 @@ const Props = {
       dn.className = "btn"; dn.textContent = "▼"; dn.title = T("레이어 -1");
       dn.style.padding = "3px 7px";
       dn.onclick = () => { w.z = (w.z || 0) - 1; upd(); Props.render(); };
-      body.appendChild(this.row(T("레이어 (z)"), lz, up, dn));
+      body.appendChild(this.row("Layer", lz, up, dn));
     }
     {
       const front = document.createElement("button");
@@ -138,13 +138,13 @@ const Props = {
       back.className = "btn"; back.textContent = T("맨 뒤로");
       back.style.padding = "3px 7px";
       back.onclick = () => { w.z = -1; upd(); Props.render(); if (window.LayerView) LayerView.render(); };
-      body.appendChild(this.row(T("순서"), front, back));
+      body.appendChild(this.row("Order", front, back));
     }
     {
       const others = ED.project.items.filter((x) => x !== w && x.uid);
       const opts = [["", "— none —"]].concat(others.map((x) =>
         [String(x.uid), (x.t || "?") + (x.bind ? "/" + x.bind : "") + " #" + x.uid]));
-      body.appendChild(this.row(T("레이어 상속"), this.select(opts, w.parent || "",
+      body.appendChild(this.row("Inherit", this.select(opts, w.parent || "",
         (v) => { w.parent = v || undefined; upd(); })));
       if (w.parent) {
         const n = document.createElement("div");
@@ -155,47 +155,41 @@ const Props = {
     }
 
     if (w.t === "text") {
-      body.appendChild(this.row(T("값 바인딩"), this.select(bindOptions(), w.bind || "", (v) => { w.bind = v || undefined; upd(); })));
-      body.appendChild(this.row(T("표시 텍스트"), this.input(w.text || "", (v) => { w.text = v; upd(); })));
-      body.appendChild(this.row(T("폰트 크기"), this.select(["tiny", "small", "large"], w.size || "tiny", (v) => { w.size = v; upd(); })));
-      body.appendChild(this.row(T("정렬"), this.select([["l", "Left"], ["c", "Center"], ["r", "Right"]], w.align || "l", (v) => { w.align = v; upd(); })));
-      body.appendChild(this.row(T("색상"), this.select(colorOptions(), w.color || "fg", (v) => { RecentColors.add(v); w.color = v; upd(); })));
-      body.appendChild(this.row(T("칩 배경"), this.select([["", "off"], ["1", "on"]], w.chip ? "1" : "", (v) => { w.chip = v ? 1 : undefined; upd(); })));
+      body.appendChild(this.row("Bind", this.select(bindOptions(), w.bind || "", (v) => { w.bind = v || undefined; upd(); })));
+      body.appendChild(this.row("Text", this.input(w.text || "", (v) => { w.text = v; upd(); })));
+      body.appendChild(this.row("Size", this.select(["tiny", "small", "large"], w.size || "tiny", (v) => { w.size = v; upd(); })));
+      body.appendChild(this.row("Align", this.select([["l", "Left"], ["c", "Center"], ["r", "Right"]], w.align || "l", (v) => { w.align = v; upd(); })));
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "fg", (v) => { RecentColors.add(v); w.color = v; upd(); })));
+      body.appendChild(this.row("Chip", this.select([["", "off"], ["1", "on"]], w.chip ? "1" : "", (v) => { w.chip = v ? 1 : undefined; upd(); })));
     } else if (w.t === "rect") {
-      body.appendChild(this.row(T("채우기 색"), this.select(colorOptions(), w.fill || "panel", (v) => { RecentColors.add(v); w.fill = v; upd(); })));
-      body.appendChild(this.row(T("테두리 색"), this.select(colorOptions(), w.stroke || "none", (v) => { RecentColors.add(v); w.stroke = v; upd(); })));
-      body.appendChild(this.row(T("모서리 반경"), this.input(w.r || 0, (v) => { w.r = +v; upd(); }, "number")));
+      body.appendChild(this.row("Fill", this.select(colorOptions(), w.fill || "panel", (v) => { RecentColors.add(v); w.fill = v; upd(); })));
+      body.appendChild(this.row("Stroke", this.select(colorOptions(), w.stroke || "none", (v) => { RecentColors.add(v); w.stroke = v; upd(); })));
+      body.appendChild(this.row("Radius", this.input(w.r || 0, (v) => { w.r = +v; upd(); }, "number")));
     } else if (w.t === "bar") {
-      body.appendChild(this.row(T("값 바인딩"), this.select(bindOptions(), w.bind || "", (v) => { w.bind = v || undefined; upd(); })));
-      body.appendChild(this.row(T("최대값"), this.input(w.max || 63, (v) => { w.max = +v; upd(); }, "number")));
-      body.appendChild(this.row(T("색상"), this.select(colorOptions(), w.color || "ok", (v) => { RecentColors.add(v); w.color = v; upd(); })));
+      body.appendChild(this.row("Bind", this.select(bindOptions(), w.bind || "", (v) => { w.bind = v || undefined; upd(); })));
+      body.appendChild(this.row("Max", this.input(w.max || 63, (v) => { w.max = +v; upd(); }, "number")));
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "ok", (v) => { RecentColors.add(v); w.color = v; upd(); })));
     } else if (w.t === "line") {
-      body.appendChild(this.row(T("색상"), this.select(colorOptions(), w.color || "line", (v) => { RecentColors.add(v); w.color = v; upd(); })));
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "line", (v) => { RecentColors.add(v); w.color = v; upd(); })));
     } else if (w.t === "wifi") {
-      const winfo = document.createElement("div");
-      winfo.className = "empty";
-      winfo.textContent = T("Wi-Fi 세기 아이콘: 막대 수를 고정하거나 0으로 두면 실제 상태(RSSI)에 따라 자동 표시합니다.");
-      body.appendChild(winfo);
-      body.appendChild(this.row(T("막대 수 (0~4, 0=자동)"), this.input(w.max == null ? 4 : w.max,
-        (v) => { w.max = Math.max(0, Math.min(4, +v)); upd(); }, "number")));
-      body.appendChild(this.row(T("색상"), this.select(colorOptions(), w.color || "accenth", (v) => { RecentColors.add(v); w.color = v; upd(); })));
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "accenth", (v) => { RecentColors.add(v); w.color = v; upd(); })));
     } else if (w.t === "batt_icon") {
       body.appendChild(this.row("Bind", this.select(bindOptions(), w.bind || "batt",
         (v) => { w.bind = v || undefined; upd(); })));
       body.appendChild(this.row("Max", this.input(w.max || 100,
         (v) => { w.max = +v; upd(); }, "number")));
-      body.appendChild(this.row(T("색상"), this.select(colorOptions(), w.color || "ok",
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "ok",
         (v) => { RecentColors.add(v); w.color = v; upd(); })));
-      body.appendChild(this.row(T("옵션 (예: noterm)"), this.input(w.text || "",
+      body.appendChild(this.row("Options", this.input(w.text || "",
         (v) => { w.text = v || undefined; upd(); })));
     } else if (w.t === "decode") {
       const info = document.createElement("div");
       info.className = "empty";
-      info.textContent = T("디코드 패널: 옵션 문자열로 설정합니다. 예) gpio=4;mode=0;lines=4 (mode 0=CW, 1=RTTY)");
+      info.textContent = T("디코드 패널: GPIO/모드/줄 수를 옵션 문자열로 지정합니다.");
       body.appendChild(info);
       body.appendChild(this.row("Options", this.input(w.text || "gpio=4;mode=0;lines=4",
         (v) => { w.text = v; upd(); })));
-      body.appendChild(this.row(T("색상"), this.select(colorOptions(), w.color || "accent",
+      body.appendChild(this.row("Color", this.select(colorOptions(), w.color || "accent",
         (v) => { w.color = v; upd(); })));
     } else if (w.t === "menu") {
       const info = document.createElement("div");
@@ -203,10 +197,10 @@ const Props = {
       info.innerHTML = T("설계 가이드입니다. 실제 MENU/SETTINGS 내용은 펌웨어가 그리고,") + "<br>" +
         T("이 모듈은 위치/크기와 가로·세로 배치만 보여줍니다 (내보내기 제외).");
       body.appendChild(info);
-      body.appendChild(this.row(T("목록 종류"), this.select(
+      body.appendChild(this.row("List", this.select(
         [["menu", "MENU"], ["settings", "SETTINGS"]], w.kind || "menu",
         (v) => { w.kind = v; upd(); })));
-      body.appendChild(this.row(T("배치 방향"), this.select(
+      body.appendChild(this.row("Layout", this.select(
         [["v", T("세로")], ["h", T("가로")]], w.orient || "v",
         (v) => {
           const old = w.orient || "v";

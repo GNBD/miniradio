@@ -682,11 +682,7 @@ static void draw_decode_panel(const uc_widget_t *w)
 static void draw_wifi(const uc_widget_t *w, const ui_state_t *s)
 {
     int bars = 0;
-    if (w->max) {
-        /* 공용 사용: 속성에서 지정한 막대 수 */
-        bars = (int)w->max;
-        if (bars > 4) { bars = 4; }
-    } else if (s->wifi_state == 1) {
+    if (s->wifi_state == 1) {
         bars = 4;
     } else if (s->wifi_state == 2) {
         int r = s->wifi_rssi;
