@@ -103,7 +103,7 @@ static bool parse_text(const char *text, size_t len, uc_widget_t *out,
         }
         if (n >= UI_RUNTIME_MAX_WIDGETS) { free(buf); return false; }
 
-        char *f[16];
+        char *f[20];   /* v2: 15필드 + scale + uid + events + text */
         char *cur = line;
         int tabs = 0;
         for (char *q = line; *q; ++q) if (*q == '\t') ++tabs;
