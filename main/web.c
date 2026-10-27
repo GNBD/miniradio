@@ -2251,7 +2251,7 @@ void http_start(void)
     httpd_config_t cfg = HTTPD_DEFAULT_CONFIG();
     cfg.server_port = 80;
     cfg.stack_size = 12288;
-    cfg.max_uri_handlers = 48;
+    cfg.max_uri_handlers = 96;
     if (httpd_start(&s_http, &cfg) != ESP_OK) {
         s_http = NULL;
         return;

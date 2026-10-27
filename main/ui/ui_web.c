@@ -388,6 +388,11 @@ static esp_err_t asset_handler(httpd_req_t *req)
     }
     const char *want = path;
     if (strcmp(path, "/ui/") == 0) want = "/ui/index.html";
+    if (strcmp(path, "/ui/extended") == 0) {
+        httpd_resp_set_status(req, "303 See Other");
+        httpd_resp_set_hdr(req, "Location", "/ui/extended/");
+        return httpd_resp_send(req, "", 0);
+    }
     if (strcmp(path, "/ui/extended/") == 0) want = "/ui/extended/index.html";
     for (int i = 0; i < ui_editor_asset_count; ++i) {
         const ui_asset_t *a = &ui_editor_assets[i];
@@ -408,8 +413,16 @@ esp_err_t ui_web_register(httpd_handle_t server)
     static httpd_uri_t ui_index = {
         .uri = "/ui/", .method = HTTP_GET, .handler = asset_handler,
     };
+    static httpd_uri_t ext_root = {
+        .uri = "/ui/extended", .method = HTTP_GET, .handler = asset_handler,
+    };
+    static httpd_uri_t ext_index = {
+        .uri = "/ui/extended/", .method = HTTP_GET, .handler = asset_handler,
+    };
     httpd_register_uri_handler(server, &ui_root);
     httpd_register_uri_handler(server, &ui_index);
+    httpd_register_uri_handler(server, &ext_root);
+    httpd_register_uri_handler(server, &ext_index);
 
     static httpd_uri_t assets[32];
     for (int i = 0; i < ui_editor_asset_count && i < 32; ++i) {
