@@ -249,12 +249,19 @@ static esp_err_t api_exlu_get(httpd_req_t *req)
     if (!query(req, "id", id, sizeof(id))) {
         return send_err(req, "400 Bad Request", "E_ARG: id required");
     }
-    exlu_t e;
-    exlu_err_t err = exlu_load(id, &e);
+    char *out = NULL;
+    size_t olen = 0;
+    exlu_err_t err = exlu_read_raw(id, &out, &olen);
     if (err != EXLU_OK) {
         return send_err(req, "404 Not Found", exlu_strerror(err));
     }
-    char *out = (char *)malloc(EXLU_MAX_FILE_SIZE + 256);
+    httpd_resp_set_type(req, "text/plain; charset=utf-8");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    esp_err_t r = httpd_resp_send(req, out, (ssize_t)olen);
+    free(out);
+    return r;
+#if 0
+    char *out2 = (char *)malloc(EXLU_MAX_FILE_SIZE + 256);
     if (!out) {
         exlu_free(&e);
         return ESP_FAIL;
@@ -282,10 +289,11 @@ static esp_err_t api_exlu_get(httpd_req_t *req)
     p += snprintf(out + p, EXLU_MAX_FILE_SIZE + 256 - p, "\n#END\n");
     httpd_resp_set_type(req, "text/plain; charset=utf-8");
     httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-    esp_err_t r = httpd_resp_send(req, out, (ssize_t)p);
-    free(out);
+    esp_err_t r2 = httpd_resp_send(req, out2, (ssize_t)p);
+    free(out2);
     exlu_free(&e);
-    return r;
+    return r2;
+#endif
 }
 
 static esp_err_t api_exlu_save(httpd_req_t *req)
@@ -309,15 +317,8 @@ static esp_err_t api_exlu_save(httpd_req_t *req)
     size_t len = 0;
     char *body = read_body(req, EXLU_MAX_FILE_SIZE, &len);
     if (!body) return send_err(req, "400 Bad Request", "E_OPEN: body");
-    exlu_t e;
-    exlu_err_t err = exlu_parse(body, len, &e);
+    exlu_err_t err = exlu_store_raw(id, body, len, overwrite);
     free(body);
-    if (err != EXLU_OK) {
-        ESP_LOGW(TAG, "exlu save rejected (%s): %s", id, exlu_strerror(err));
-        return send_err(req, "400 Bad Request", exlu_strerror(err));
-    }
-    err = exlu_save(id, &e, overwrite);
-    exlu_free(&e);
     if (err != EXLU_OK) {
         ESP_LOGW(TAG, "exlu write failed (%s): %s", id, exlu_strerror(err));
         return send_err(req, "409 Conflict", exlu_strerror(err));
@@ -424,8 +425,8 @@ esp_err_t ui_web_register(httpd_handle_t server)
     httpd_register_uri_handler(server, &ext_root);
     httpd_register_uri_handler(server, &ext_index);
 
-    static httpd_uri_t assets[32];
-    for (int i = 0; i < ui_editor_asset_count && i < 32; ++i) {
+    static httpd_uri_t assets[64];
+    for (int i = 0; i < ui_editor_asset_count && i < 64; ++i) {
         assets[i].uri = ui_editor_assets[i].path;
         assets[i].method = HTTP_GET;
         assets[i].handler = asset_handler;

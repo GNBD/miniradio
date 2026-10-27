@@ -417,6 +417,66 @@ exlu_err_t exlu_save(const char *id, const exlu_t *e, bool overwrite)
     return EXLU_OK;
 }
 
+exlu_err_t exlu_store_raw(const char *id, const char *text, size_t len,
+                           bool overwrite)
+{
+    if (!id || !text || len == 0) {
+        return EXLU_ERR_ARG;
+    }
+    exlu_t e;
+    exlu_err_t err = exlu_parse(text, len, &e);
+    if (err != EXLU_OK) {
+        return err;
+    }
+    exlu_free(&e);
+
+    char path[96];
+    path_of(id, path, sizeof(path));
+    if (!overwrite) {
+        FILE *chk = fopen(path, "rb");
+        if (chk) {
+            fclose(chk);
+            return EXLU_ERR_EXISTS;
+        }
+    }
+    mkdir(EXLU_DIR, 0777);
+    const char *tmp = "/littlefs/ui/.exlu.tmp";
+    FILE *f = fopen(tmp, "wb");
+    if (!f) {
+        return EXLU_ERR_LAYOUT;
+    }
+    size_t wr = fwrite(text, 1, len, f);
+    fclose(f);
+    if (wr != len) {
+        remove(tmp);
+        return EXLU_ERR_LAYOUT;
+    }
+    remove(path);
+    if (rename(tmp, path) != 0) {
+        return EXLU_ERR_LAYOUT;
+    }
+    return EXLU_OK;
+}
+
+exlu_err_t exlu_read_raw(const char *id, char **out, size_t *len)
+{
+    if (!id || !out) {
+        return EXLU_ERR_ARG;
+    }
+    char path[96];
+    path_of(id, path, sizeof(path));
+    size_t n = 0;
+    char *buf = read_all(path, &n);
+    if (!buf) {
+        return EXLU_ERR_NOT_FOUND;
+    }
+    *out = buf;
+    if (len) {
+        *len = n;
+    }
+    return EXLU_OK;
+}
+
 exlu_err_t exlu_remove(const char *id)
 {
     if (!id) {

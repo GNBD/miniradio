@@ -92,6 +92,10 @@ exlu_err_t exlu_parse(const char *text, size_t len, exlu_t *out);
 /* littlefs: /littlefs/ui/<id>.exlu */
 exlu_err_t exlu_load(const char *id, exlu_t *out);
 exlu_err_t exlu_save(const char *id, const exlu_t *e, bool overwrite);
+/* 검증만 수행하고 원문을 그대로 저장/읽기 (알 수 없는 섹션 보존) */
+exlu_err_t exlu_store_raw(const char *id, const char *text,
+                          size_t len, bool overwrite);
+exlu_err_t exlu_read_raw(const char *id, char **out, size_t *len);
 exlu_err_t exlu_remove(const char *id);
 int        exlu_list_ids(char ids[][EXLU_NAME_MAX], int max);
 int        exlu_list(exlu_manifest_t *out, int max);
