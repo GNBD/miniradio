@@ -265,7 +265,8 @@ static const char *str_bind(uint8_t b, const ui_state_t *s, char *buf, size_t n)
                  s_agc_on ? "ON" : "OFF", (unsigned)s_softmute);
         return buf;
     case UC_B_LINE3:
-        snprintf(buf, n, "AFC OK  AVC %u  SQ %s", (unsigned)s_avc,
+        const char *afc = !s->have_rsq ? "--" : (s->rsq.afc_rail ? "RA" : "OK");
+        snprintf(buf, n, "AFC %s  AVC %u  SQ %s", afc, (unsigned)s_avc,
                  s_squelch_on ? "ON" : "OFF");
         return buf;
     case UC_B_WIFI:
