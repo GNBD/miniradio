@@ -22,7 +22,7 @@ static const menu_entry_t s_set[] = {
     { ST_WIFI,       "WI-FI",      1 },
     { ST_EIBI,       "EIBI",       1 },
     { ST_QUICKSET,   "QUICK SET",  1 },
-    { ST_SIGDBG,     "SIG DBG",    1 },
+    { ST_SIGDBG,     "SIG spd",    1 },
     { ST_SIGVIEW,    "BOTTOM",     1 },
     { ST_MOD_A,      "MOD A",      0 },
     { ST_MOD_B,      "MOD B",      0 },

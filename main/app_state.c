@@ -142,7 +142,7 @@ bool     s_eibi_yes;
 storage_splash_t s_splash;
 
 uint16_t s_quick_mask = 0x000F;
-uint8_t  s_dbg_sig;   /* 진단용, 저장하지 않음 (부팅 시 NORMAL) */
+uint8_t  s_dbg_sig = 1;   /* 0=LOW(250ms), 1=HIGH(30ms) */
 uint8_t  s_sig_view;  /* SIG 칸 표시 (0=그래프) */
 int      s_qcfg_cur;
 int      s_qcfg_top;

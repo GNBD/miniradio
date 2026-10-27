@@ -724,7 +724,7 @@ const char *const ST_LABELS[ST_COUNT] = {
     "TIME", "UTC",
     "BATT", "BATT CAL", "CPU", "WI-FI",
     "EIBI", "QUICK SET",
-    "SIG DBG", "BOTTOM",
+    "SIG spd", "BOTTOM",
     "MOD A", "MOD B", "MOD C", "MOD D",
     "MOD E", "MOD F", "MOD G", "MOD H",
     "ABOUT"
@@ -834,51 +834,13 @@ void fmt_freq_short(uint32_t hz, int mode, char *buf, size_t n)
 }
 
 
-/* --------------------------------------------------------- signal dbg
- * SIG DBG 토글(설정 → SIG DBG)이 켜져 있을 때만 동작하는 진단 계측.
- * HMI_TUNE 화면에서 신호 패널 리드로우 1회 소요 시간과 초당 횟수를 로그로 남겨
- * LCD 갱신이 오디오 노이즈의 원인인지 실기에서 분리 확인하기 위한 용도.
- */
-static void sigdbg_add(uint32_t us, int rssi, int snr)
-{
-    static uint32_t n;
-    static uint32_t sum_us;
-    static int64_t window_start;
-    static int last_rssi;
-    static int last_snr;
-
-    ++n;
-    sum_us += us;
-    last_rssi = rssi;
-    last_snr = snr;
-
-    int64_t now_us = esp_timer_get_time();
-    if (window_start == 0) {
-        window_start = now_us;
-        return;
-    }
-    int64_t elapsed = now_us - window_start;
-    if (elapsed < 2000000) {
-        return;
-    }
-    uint32_t avg = n ? (sum_us / n) : 0;
-    uint32_t rate = (uint32_t)((int64_t)n * 1000000 / elapsed);
-    ESP_LOGI(TAG, "sigdbg draw=%lu/s avg=%luus rssi=%d snr=%d mode=%d",
-             (unsigned long)rate, (unsigned long)avg, last_rssi, last_snr,
-             (int)s_dbg_sig);
-    n = 0;
-    sum_us = 0;
-    window_start = now_us;
-}
-
 void rsq_poll(uint32_t now)
 {
     static uint32_t last;
     bool fast = (s_hmi == HMI_TUNE || s_hmi == HMI_SEEK);
-    uint32_t period = fast ? 30u : (uint32_t)RSQ_PERIOD;
-    if (fast && s_dbg_sig == 3) {
-        period = 250u;          /* 진단: 갱신 주기만 늦춰 비교 */
-    }
+    /* SIG spd: LOW=250ms(부드러움), HIGH=30ms(빠름) */
+    uint32_t period = fast ? (s_dbg_sig == 0 ? 250u : 30u)
+                           : (uint32_t)RSQ_PERIOD;
     if (!s_radio_ok || s_ats == ATS_SEEK || (now - last) < period) {
         return;
     }
@@ -901,14 +863,7 @@ void rsq_poll(uint32_t now)
         s_ui.rsq = r;
         s_ui.have_rsq = true;
         s_ui.stereo = r.stereo;
-        if (s_dbg_sig == 2) {
-            return;             /* 진단: 리드로우 정지 */
-        }
-        int64_t t0 = esp_timer_get_time();
         ui_draw_adv_signal4b(&s_ui);
-        if (s_dbg_sig) {
-            sigdbg_add((uint32_t)(esp_timer_get_time() - t0), r.rssi, r.snr);
-        }
         return;
     }
     if (ema_rssi < 0.0f) {
@@ -952,18 +907,10 @@ void rsq_poll(uint32_t now)
     }
 
     if (s_hmi == HMI_TUNE || s_hmi == HMI_SEEK) {
-        if (s_dbg_sig == 2) {
-            /* 진단: 패널 리드로우 정지 (값/스켈치는 계속 갱신) */
+        if (mute_changed) {
+            ui_draw_all(&s_ui);   /* SQ 상태 갱신 */
         } else {
-            int64_t t0 = esp_timer_get_time();
-            if (mute_changed) {
-                ui_draw_all(&s_ui);   /* SQ ?? ?? */
-            } else {
-                ui_draw_adv_signal4b(&s_ui);
-            }
-            if (s_dbg_sig) {
-                sigdbg_add((uint32_t)(esp_timer_get_time() - t0), r.rssi, r.snr);
-            }
+            ui_draw_adv_signal4b(&s_ui);
         }
     }
 }

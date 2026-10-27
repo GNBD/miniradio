@@ -205,8 +205,8 @@ void settings_build(void)
     }
     snprintf(s_sbuf[ST_CPU], sizeof(s_sbuf[ST_CPU]), "%dMHz", s_cpu_mhz);
     snprintf(s_sbuf[ST_SIGDBG], sizeof(s_sbuf[ST_SIGDBG]), "%s",
-             (const char *[]){"OFF", "LOG", "HOLD", "SLOW"}[s_dbg_sig > 3 ? 0
-                                                                       : s_dbg_sig]);
+             (const char *[]){"LOW", "HIGH"}[s_dbg_sig > 1 ? 1
+                                                           : s_dbg_sig]);
     snprintf(s_sbuf[ST_SIGVIEW], sizeof(s_sbuf[ST_SIGVIEW]), "%s",
              (const char *[]){"RDS+SIG", "BAND MAP"}[s_sig_view > 1 ? 0
                                                                 : s_sig_view]);
@@ -626,11 +626,9 @@ void options_open(int page, int item)
             s_opt.title = "BATTERY CAL";
             break;
         case ST_SIGDBG:
-            opt_label(n++, "OFF");
-            opt_label(n++, "LOG (NORMAL)");
-            opt_label(n++, "HOLD (NO REDRAW)");
-            opt_label(n++, "SLOW 250ms");
-            s_opt.title = "SIGNAL DBG";
+            opt_label(n++, "LOW (250ms)");
+            opt_label(n++, "HIGH (30ms)");
+            s_opt.title = "SIGNAL SPEED";
             live = false;
             break;
         case ST_SIGVIEW:
@@ -877,10 +875,8 @@ void opt_apply(int page, int item, int idx)
             mark_change();
             break;
         case ST_SIGDBG:
-            s_dbg_sig = (uint8_t)((idx < 0) ? 0 : (idx > 3 ? 3 : idx));
-            toast(s_dbg_sig == 2 ? "SIG HOLD"
-                  : (s_dbg_sig == 3 ? "SIG SLOW 250ms"
-                  : (s_dbg_sig == 1 ? "SIG LOG" : "SIG OFF")));
+            s_dbg_sig = (uint8_t)((idx <= 0) ? 0 : 1);
+            toast(s_dbg_sig ? "SIG spd HIGH" : "SIG spd LOW");
             break;
         case ST_SIGVIEW:
             s_sig_view = (uint8_t)((idx == 1) ? 1 : 0);
@@ -1127,7 +1123,12 @@ void options_close(bool apply)
 void options_move(int d)
 {
     if (s_opt.slider) {
-        int v = s_opt.value + d * s_opt.step;
+        /* 밝기/슬립/볼륨 등 값 조절에도 엔코더 가속 적용 */
+        int32_t a = accel_counts(d);
+        if (a == 0 && d != 0) {
+            a = (d > 0) ? 1 : -1;
+        }
+        int v = s_opt.value + (int)(a * s_opt.step);
         if (v < s_opt.min) { v = s_opt.min; }
         if (v > s_opt.max) { v = s_opt.max; }
         s_opt.value = v;
