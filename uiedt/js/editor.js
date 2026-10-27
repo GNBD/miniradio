@@ -789,7 +789,7 @@ const ED = {
       c.fillStyle = "#0072de";
       c.strokeStyle = "#ffffff";
       c.lineWidth = 1;
-      const hw = 9;
+      const hw = 5;
       const pts = [
         [w.x, w.y], [w.x + w.w / 2, w.y], [w.x + w.w, w.y],
         [w.x, w.y + w.h / 2], [w.x + w.w, w.y + w.h / 2],
