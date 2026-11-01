@@ -6,34 +6,33 @@ This project includes or references the following third-party software and licen
 - Author: Max Arnold
 - License: MIT
 - Source: https://github.com/esp32-si4732/ats-mini
-- Full text: `licenses/MIT.txt`
+- Full text: `MIT.txt`
 
 ## LovyanGFX
 - License: MIT / Apache-2.0 (see upstream)
-- Full text: `licenses/lovyan_gfx.txt`
+- Full text: `lovyan_gfx.txt`
 
 ## ESP-IDF
 - License: Apache License 2.0
-- Full text: `licenses/Apache-2.0.txt`
+- Full text: `Apache-2.0.txt`
 
 ## LittleFS (joltwallet)
 - License: MIT (see upstream)
-- Full text: `licenses/littlefs.txt`
+- Full text: `littlefs.txt`
 
 ## Lua
 - Copyright: Lua.org, PUC-Rio
 - License: MIT
-- Full text: `licenses/MIT.txt`
+- Full text: `MIT.txt`
 
 ## PU2CLR SI4735 (SSB patch reference)
 - Author: Ricardo Lima Caratti
 - License: MIT
 - Note: SSB patch data may originate from Silicon Labs AN332; verify before redistribution.
-- https://github.com/pu2clr/SI4735
 
 ## DejaVu Fonts
 - License: DejaVu Fonts License (Bitstream Vera based)
-- See: `components/lovyan_gfx/src/lgfx/Fonts/GFXFF/license.txt`
+- See: `../components/lovyan_gfx/src/lgfx/Fonts/GFXFF/license.txt`
 
 ## SSB Patch Data
 - Origin: Silicon Labs (AN332)
