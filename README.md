@@ -1,5 +1,7 @@
 # GNBD ATS Mini Radio
 
+**Version: 1.1.25**
+
 ESP32-S3 firmware for the SI4732 radio. Supports FM/AM/SSB reception, RDS, EiBi schedule,
 custom UI, Lua scripting, and Wi-Fi web editor.
 
