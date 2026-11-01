@@ -188,8 +188,8 @@
         </a>
       </div>
       <div class="meta">
-        <span class="chip">v1.1.24</span>
-        <span class="chip">BUILD 261028094708</span>
+        <span class="chip">v1.1.25</span>
+        <span class="chip">BUILD 261101131504</span>
         <span class="chip">ESP32-S3</span>
       </div>
     </div>
@@ -237,7 +237,7 @@
           <span slot="unsupported" class="unsupported">Chrome 또는 Edge에서 HTTPS로 열어주세요.</span>
           <span slot="not-allowed" class="unsupported">이 브라우저에서는 Web Serial을 사용할 수 없습니다.</span>
         </esp-web-install-button>
-        <p class="hint">Web Serial · BM v4 + recovery 4.2.2</p>
+        <p class="hint">Web Serial · BM v4 + recovery 4.3.3</p>
         <div class="installer-lines">
           <span><b>bootloader</b> 0x000000</span>
           <span><b>partition</b> 0x008000</span>
@@ -251,9 +251,9 @@
         <div class="kicker">OTA image</div>
         <h3 data-i18n="otaTitle">OTA 파일만 받기</h3>
         <p data-i18n="otaDesc">이미 다른 방식으로 업데이트하거나, 앱 영역만 교체하려면 OTA 이미지를 사용하세요.</p>
-        <p class="file">GNBD_miniradio_1.1.24_ota.bin</p>
-        <div class="sub">BUILD 261028094708 · 1,604,480 bytes</div>
-        <a class="btn ghost" href="download/GNBD_miniradio_1.1.24_ota.bin" download>
+        <p class="file">GNBD_miniradio_1.1.25_ota.bin</p>
+        <div class="sub">BUILD 261101131504 · 1,556,496 bytes</div>
+        <a class="btn ghost" href="download/GNBD_miniradio_1.1.25_ota.bin" download>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M5 21h14"/></svg>
           <span data-i18n="otaBtn">OTA 이미지 다운로드</span>
         </a>
@@ -264,7 +264,7 @@
         </a>
         -->
         <div class="sha" style="margin-top:14px">
-          <code id="sha">84edeaa5f809f51ffcf3898725916c87b4e3b47c5148e815342fca3926c9e97b</code>
+          <code id="sha">36680cb5d42b20cf71e429b832bbca0fc0a2c911ea657f99c2017c226771197c</code>
           <button id="copy" type="button" data-i18n="copy">복사</button>
         </div>
         <p class="hint">SHA256 · <a href="download/SHA256SUMS.txt" download data-i18n="checksumFile">체크섬 파일</a></p>
@@ -285,7 +285,7 @@
       <div class="step"><b>02 / INSTALL</b><h3 data-i18n="step2Title">브라우저에서 설치</h3><p data-i18n="step2Desc">Chrome 또는 Edge에서 이 페이지를 열고 설치 버튼을 누릅니다.</p></div>
       <div class="step"><b>03 / VERIFY</b><h3 data-i18n="step3Title">체크섬 확인</h3><p data-i18n="step3Desc">OTA로 설치하는 경우 다운로드 파일의 SHA256을 확인하세요.</p></div>
     </div>
-<pre>esptool.py --chip esp32s3 -p COM7 write_flash 0x10000 GNBD_miniradio_1.1.24_ota.bin</pre>
+<pre>esptool.py --chip esp32s3 -p COM7 write_flash 0x10000 GNBD_miniradio_1.1.25_ota.bin</pre>
   </section>
 </main>
 

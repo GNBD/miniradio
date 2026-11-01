@@ -1,6 +1,6 @@
 {
   "name": "GNBD miniradio",
-  "version": "1.1.24",
+  "version": "1.1.25",
   "new_install_prompt_erase": true,
   "builds": [
     {
@@ -19,15 +19,14 @@
           "offset": 57344
         },
         {
-          "path": "download/GNBD_miniradio_1.1.24_app.bin",
+          "path": "download/GNBD_miniradio_1.1.25_app.bin",
           "offset": 65536
         },
         {
-          "path": "download/bm/ats-mini-recovery-4.2.2.bin",
+          "path": "download/bm/ats-mini-recovery-4.3.3.bin",
           "offset": 8781824
         }
       ]
     }
   ]
 }
-
