@@ -1,21 +1,47 @@
-# GNBD ATS Mini Radio
+# GNBD miniradio
+⚠️work in progress
 
-ESP32-S3 기반 SI4732 라디오 펌웨어입니다. FM/AM/SSB 수신, RDS, EiBi 스케줄, 커스텀 UI,
-Lua 스크립팅, Wi-Fi 웹 에디터 등을 지원합니다.
+<img width="320" height="170" alt="miniradio" src="https://github.com/user-attachments/assets/6efc7f51-b688-4274-865f-c736e9fb025a" />
 
-## 주요 기능
+Preview: https://gnbdatsmini.netlify.app/
 
-- FM / AM / SSB(LSB/USB) 수신
-- RDS (PS/RT/PTY/CT), EiBi 방송 스케줄 조회
-- 커스텀 UI 레이아웃 (LittleFS 런타임 + web 에디터)
-- Lua 위젯 API (w, radio, gpio, log, time_ms)
-- ATS(자동 채널 스캔), 스펙트럼 스캔, 프리셋/ATS 리스트
-- Wi-Fi 웹 인터페이스 (설정, UI 편집, 펌웨어 업데이트)
+GNBD miniradio의 **Dual Boot + Theme Version** 펌웨어 소스입니다.
 
-## 라이선스
+- Product: **GNBD miniradio**
+- Build: **Dual Boot + Theme Version**
+- Firmware version: **1.1.24**
+- Target: **ESP32-S3 N16R8 + SI4732**
+- Flash layout: ATS Mini Dualboot 16MB (`app0` / `app1` / `recovery`)
 
-- 본 프로젝트: MIT License (see `LICENSE`)
-- 디스플레이: ESP32-SI4732 Radio (Max Arnold) — MIT
-- LovyanGFX: license.txt 참조
-- ESP-IDF / LittleFS: 각 라이선스 참조
-- SSB 패치 데이터: Silicon Labs 출처, 별도 라이선스 검증 필요
+`main/`은 ESP-IDF 애플리케이션 컴포넌트 이름입니다. 빌드 경로와 CMake 구성이
+`main`을 기준으로 잡혀 있으므로 폴더명을 바꾸지 마세요.
+
+## Build
+
+ESP-IDF v5.5.x 기준입니다.
+
+```sh
+idf.py set-target esp32s3
+idf.py build
+```
+
+앱 영역만 갱신하려면:
+
+```sh
+esptool.py --chip esp32s3 -p COM7 write_flash 0x10000 build/miniradio.bin
+```
+
+## Layout
+
+- `main/` — 애플리케이션 소스
+- `components/` — 디스플레이, SI4732, 저장소, 인코더 등
+- `partitions.csv` — 16MB dual-boot 파티션
+- `sdkconfig.defaults` — 기본 빌드 설정
+
+## License
+
+이 폴더의 프로젝트 코드는 MIT License입니다. 자세한 내용은 [LICENSE](LICENSE)를
+참고하세요.
+
+서드파티 고지는 [licenses](licenses)와 각
+컴포넌트의 라이선스 파일을 따릅니다.
