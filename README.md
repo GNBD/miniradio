@@ -43,5 +43,5 @@ esptool.py --chip esp32s3 -p COM7 write_flash 0x10000 build/miniradio.bin
 이 폴더의 프로젝트 코드는 MIT License입니다. 자세한 내용은 [LICENSE](LICENSE)를
 참고하세요.
 
-서드파티 고지는 [THIRD_PARTY_NOTICES.md](licenses)와 각
+서드파티 고지는 [licenses](licenses)와 각
 컴포넌트의 라이선스 파일을 따릅니다.
