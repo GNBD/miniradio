@@ -15,6 +15,9 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_check.h"
+#include "esp_timer.h"
+#include "esp_rom_sys.h"
+#include "esp_adc/adc_oneshot.h"
 #include "esp_http_client.h"
 #include "esp_crt_bundle.h"
 #include "mbedtls/sha256.h"
@@ -307,24 +310,22 @@ static const char WEB_ROOT_MAIN[] =
     "<option value='0'>50us</option><option value='1'>75us</option>"
     "</select></div>"
     "<div class='setrow'><span class='k'>AGC</span>"
-    "<select id='ragc' onchange='radioSet(\"agc\",this.value)'>"
-    "<option value='0'>ON</option><option value='1'>OFF</option>"
-    "</select></div>"
+    "<select id='ragc' onchange='radioSet(\"agc\",this.value)'></select></div>"
     "<div class='setrow'><span class='k'>Squelch</span>"
     "<span class='v' id='rsqv'>OFF</span></div>"
     "<input class='rset' id='rsq' type='range' min='0' max='100' value='0'"
     " oninput='$(\"rsqv\").textContent=this.value==0?\"OFF\":this.value'"
     " onchange='radioSet(\"squelch\",this.value)'>"
-    "<div class='setrow'><span class='k'>AVC gain</span>"
+    "<div id='ravcWrap'><div class='setrow'><span class='k'>AVC gain</span>"
     "<span class='v' id='ravcv'>0 dB</span></div>"
     "<input class='rset' id='ravc' type='range' min='0' max='90' value='0'"
     " oninput='$(\"ravcv\").textContent=this.value+\" dB\"'"
-    " onchange='radioSet(\"avc\",this.value)'>"
-    "<div class='setrow'><span class='k'>Soft mute</span>"
+    " onchange='radioSet(\"avc\",this.value)'></div>"
+    "<div id='rsmWrap'><div class='setrow'><span class='k'>Soft mute</span>"
     "<span class='v' id='rsmv'>0 dB</span></div>"
     "<input class='rset' id='rsm' type='range' min='0' max='63' value='0'"
     " oninput='$(\"rsmv\").textContent=this.value+\" dB\"'"
-    " onchange='radioSet(\"softmute\",this.value)'>"
+    " onchange='radioSet(\"softmute\",this.value)'></div>"
     "<div id='rbfoWrap' style='display:none'><div class='setrow'>"
     "<span class='k'>BFO</span><span class='v' id='rbfov'>0 Hz</span></div>"
     "<input class='rset' id='rbfo' type='range' min='-1000' max='1000' value='0'"
@@ -367,6 +368,13 @@ static const char WEB_ROOT_JS[] =
     "list.forEach(n=>{const x=document.createElement('button');"
     "x.className='chipbtn'+(s.mode===n?' on':'');x.textContent=n;"
     "x.onclick=()=>cmd('mode='+n);m.appendChild(x);});}"
+    "function buildAgc(s){const el=$('ragc');const max=s.agc_max|0;const k=String(max);"
+    "if(el.dataset.k!==k){el.innerHTML='';"
+    "const a=document.createElement('option');a.value=0;a.textContent='AUTO';el.appendChild(a);"
+    "const b=document.createElement('option');b.value=1;b.textContent='OFF';el.appendChild(b);"
+    "for(let i=1;i<=max;i++){const o=document.createElement('option');o.value=i+1;o.textContent=i;el.appendChild(o);}"
+    "el.dataset.k=k;}"
+    "if(document.activeElement!==el)el.value=s.agc_sel;}"
     "function fillSel(el,arr,v){const k=arr.join('|');"
     "if(el.dataset.k!==k){el.innerHTML='';arr.forEach((n,i)=>{"
     "const o=document.createElement('option');o.value=i;o.textContent=n;"
@@ -386,16 +394,18 @@ static const char WEB_ROOT_JS[] =
     "$('wifi').textContent=s.wifi;$('wifi').className='pill';"
     "$('vol').textContent=s.volume;"
     "if(!dragging)$('volrange').value=s.volume;"
-    "buildBands(s);buildModes(s);"
+    "buildBands(s);buildModes(s);buildAgc(s);"
     "if(bandsBuilt){[...$('bands').children].forEach((x,i)=>"
     "x.className='chipbtn'+(i===s.band_idx?' on':''));}"
-    "const fm=s.band==='FM';"
+    "const fm=s.mode==='FM';"
     "$('rstereoRow').style.display=fm?'':'none';"
     "$('rrdsRow').style.display=fm?'':'none';"
     "$('rdeemphRow').style.display=fm?'':'none';"
+    "$('ravcWrap').style.display=fm?'none':'';"
+    "$('rsmWrap').style.display=fm?'none':'';"
     "fillSel($('rstep'),s.steps,s.step);fillSel($('rbw'),s.bws,s.bw);"
     "$('rstereo').value=s.stereo_force?'1':'0';$('rrds').value=s.rds?'0':'1';"
-    "$('rdeemph').value=s.deemph75?'1':'0';$('ragc').value=s.agc?'0':'1';"
+    "$('rdeemph').value=s.deemph75?'1':'0';"
     "if(!rdrag){$('rsq').value=s.squelch_on?s.squelch:0;"
     "$('ravc').value=s.avc;$('rsm').value=s.softmute;"
     "$('rbfo').min=-s.bfo_max;$('rbfo').max=s.bfo_max;$('rbfo').value=s.bfo;}"
@@ -1293,6 +1303,7 @@ esp_err_t http_status_handler(httpd_req_t *req)
         "\"step\":%d,\"steps\":[%s],\"bw\":%d,\"bws\":[%s],"
         "\"bfo\":%ld,\"bfo_max\":%d,\"ssb\":%s,"
         "\"rds\":%s,\"stereo_force\":%s,\"deemph75\":%s,\"agc\":%s,"
+        "\"agc_idx\":%d,\"agc_sel\":%d,\"agc_max\":%u,"
         "\"avc\":%u,\"softmute\":%u,\"squelch_on\":%s,\"squelch\":%u,"
         "\"squelch_type\":\"%s\","
         "\"rssi\":%d,\"snr\":%d,\"volume\":%u,\"vmax\":%u,"
@@ -1300,7 +1311,8 @@ esp_err_t http_status_handler(httpd_req_t *req)
         "\"wifi\":\"%s\",\"ip\":\"%s\",\"ssid\":\"%s\","
         "\"utc_min\":%d,\"follow\":%s,"
         "\"date\":\"%04d-%02d-%02d\",\"clock\":\"%02d:%02d\","
-        "\"seeking\":%s,\"radio\":%s,\"station\":\"%s\"}",
+        "\"seeking\":%s,\"radio\":%s,\"lineflt\":%s,\"nb\":%s,\"nbprobe\":%d,"
+        "\"station\":\"%s\"}",
         freq, (unsigned long)s_ui.freq_hz, band_table[s_ui.band_idx].name,
         s_ui.band_idx, bands, mode_str(s_ui.mode),
         (s_ui.mode == RADIO_MODE_FM && s_ui.stereo) ? "true" : "false",
@@ -1310,7 +1322,8 @@ esp_err_t http_status_handler(httpd_req_t *req)
         s_rds_on ? "true" : "false",
         s_stereo_force ? "true" : "false",
         s_deemph_75 ? "true" : "false",
-        s_agc_on ? "true" : "false",
+        (s_agc_idx < 0) ? "true" : "false",
+        (int)s_agc_idx, agc_sel_index(), (unsigned)agc_max_idx(),
         s_avc, s_softmute,
         s_squelch_on ? "true" : "false",
         s_squelch_on ? s_squelch_thr[sq] : 0,
@@ -1324,6 +1337,8 @@ esp_err_t http_status_handler(httpd_req_t *req)
         s_utc_min, s_follow_browser ? "true" : "false",
         yy, mo, dd, hh, mm,
         s_ui.seeking ? "true" : "false", s_ui.radio_ok ? "true" : "false",
+        radio_am_line_filter() ? "true" : "false",
+        radio_am_nb() ? "true" : "false", radio_nb_probe_result(),
         station);
     if (n < 0) {
         n = 0;
@@ -1386,6 +1401,226 @@ esp_err_t http_wifi_api_handler(httpd_req_t *req)
     httpd_resp_set_type(req, "application/json");
     httpd_resp_set_hdr(req, "Cache-Control", "no-store");
     return httpd_resp_send(req, page, n);
+}
+
+/* /api/adc — decode 입력용 ADC 샘플 스냅샷 (기본 GPIO 11, ADC2).
+   ?n=개수(16..2048) &gpio=핀번호. Wi-Fi가 ADC2를쓰는 중이면 err 반환. */
+esp_err_t http_adc_handler(httpd_req_t *req)
+{
+    if (!web_authorized(req)) {
+        return web_require_auth(req);
+    }
+    char q[128];
+    char val[16];
+    int gpio = 11;
+    int n = 256;
+    if (httpd_req_get_url_query_str(req, q, sizeof(q)) == ESP_OK) {
+        if (httpd_query_key_value(q, "gpio", val, sizeof(val)) == ESP_OK) {
+            gpio = atoi(val);
+        }
+        if (httpd_query_key_value(q, "n", val, sizeof(val)) == ESP_OK) {
+            n = atoi(val);
+        }
+    }
+    if (n < 16) {
+        n = 16;
+    }
+    if (n > 2048) {
+        n = 2048;
+    }
+
+    adc_unit_t unit;
+    adc_channel_t chan;
+    adc_oneshot_unit_handle_t h = NULL;
+    const char *err = NULL;
+    int got = 0;
+
+    if (adc_oneshot_io_to_channel(gpio, &unit, &chan) != ESP_OK) {
+        err = "gpio";
+    } else {
+        adc_oneshot_unit_init_cfg_t ucfg = { .unit_id = unit };
+        if (adc_oneshot_new_unit(&ucfg, &h) != ESP_OK) {
+            h = NULL;
+            err = "busy";
+        } else {
+            adc_oneshot_chan_cfg_t ccfg = {
+                .atten = ADC_ATTEN_DB_12,
+                .bitwidth = ADC_BITWIDTH_DEFAULT,
+            };
+            if (adc_oneshot_config_channel(h, chan, &ccfg) != ESP_OK) {
+                err = "cfg";
+            }
+        }
+    }
+
+    size_t o = (size_t)snprintf(page, sizeof(page),
+                                "{\"gpio\":%d,\"fs\":8000,\"n\":%d,\"data\":[",
+                                gpio, n);
+    if (o >= sizeof(page)) {
+        o = sizeof(page) - 1;
+    }
+
+    if (!err) {
+        int64_t next = esp_timer_get_time();
+        for (int i = 0; i < n; ++i) {
+            int raw = 0;
+            if (adc_oneshot_read(h, chan, &raw) != ESP_OK) {
+                err = "read";
+                break;
+            }
+            int w = snprintf(page + o, sizeof(page) - o, "%s%d",
+                             i ? "," : "", raw);
+            if (w < 0 || (size_t)w >= sizeof(page) - o) {
+                break;
+            }
+            o += (size_t)w;
+            got = i + 1;
+            next += 1000000 / 8000;
+            int64_t now = esp_timer_get_time();
+            if (next > now) {
+                esp_rom_delay_us((uint32_t)(next - now));
+            } else {
+                next = now;
+            }
+        }
+    }
+    if (h) {
+        adc_oneshot_del_unit(h);
+    }
+
+    if (o < sizeof(page)) {
+        int w = snprintf(page + o, sizeof(page) - o, "],\"got\":%d%s%s%s}",
+                         got, err ? ",\"err\":\"" : "",
+                         err ? err : "", err ? "\"" : "");
+        if (w > 0 && (size_t)w < sizeof(page) - o) {
+            o += (size_t)w;
+        }
+    }
+    page[o < sizeof(page) ? o : sizeof(page) - 1] = '\0';
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    return httpd_resp_send(req, page, (ssize_t)o);
+}
+
+/* GET /api/stream — raw PCM s16le 8 kHz mono, chunked. 브라우저 /listen에서 재생. */
+esp_err_t http_pcm_handler(httpd_req_t *req)
+{
+    if (!web_authorized(req)) {
+        return web_require_auth(req);
+    }
+    char q[64];
+    int gpio = 11;
+    if (httpd_req_get_url_query_str(req, q, sizeof(q)) == ESP_OK) {
+        char v[12];
+        if (httpd_query_key_value(q, "gpio", v, sizeof(v)) == ESP_OK) {
+            gpio = atoi(v);
+        }
+    }
+    adc_unit_t unit;
+    adc_channel_t chan;
+    if (adc_oneshot_io_to_channel(gpio, &unit, &chan) != ESP_OK) {
+        return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "bad gpio");
+    }
+    adc_oneshot_unit_handle_t h = NULL;
+    adc_oneshot_unit_init_cfg_t uc = { .unit_id = unit };
+    if (adc_oneshot_new_unit(&uc, &h) != ESP_OK) {
+        return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                   "adc busy");
+    }
+    adc_oneshot_chan_cfg_t cc = {
+        .atten = ADC_ATTEN_DB_12,
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+    };
+    adc_oneshot_config_channel(h, chan, &cc);
+
+    httpd_resp_set_type(req, "application/octet-stream");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+
+    static int16_t blk[256];
+    esp_err_t err = ESP_OK;
+    int64_t next = esp_timer_get_time();
+    while (1) {
+        for (int i = 0; i < 256; ++i) {
+            int raw = 0;
+            adc_oneshot_read(h, chan, &raw);
+            blk[i] = (int16_t)(raw - 2048);
+            next += 125;                    /* 8 kHz */
+            int64_t now = esp_timer_get_time();
+            if (next > now) {
+                esp_rom_delay_us((uint32_t)(next - now));
+            } else {
+                next = now;
+            }
+        }
+        err = httpd_resp_send_chunk(req, (const char *)blk, sizeof(blk));
+        if (err != ESP_OK) {
+            break;                          /* 클라이언트 끊김 */
+        }
+    }
+    httpd_resp_send_chunk(req, NULL, 0);
+    adc_oneshot_del_unit(h);
+    return err;
+}
+
+/* GET /listen — ADC 라이브 재생 페이지 (ScriptProcessor,8k→ctx rate 선형 보간) */
+esp_err_t http_listen_handler(httpd_req_t *req)
+{
+    if (!web_authorized(req)) {
+        return web_require_auth(req);
+    }
+    static const char html[] =
+        "<!doctype html><meta charset=utf-8><meta name=viewport "
+        "content='width=device-width,initial-scale=1'><title>listen</title>"
+        "<body style='background:#0b0f16;color:#e8edf5;font-family:sans-serif;"
+        "text-align:center;padding-top:48px'>"
+        "<button id=b style='font-size:22px;padding:16px 36px;background:#16202e;"
+        "color:#e8edf5;border:1px solid #2b3a4d;border-radius:12px'>▶ PLAY</button>"
+        "<div id=s style='margin-top:18px;color:#8fa3ba'></div>"
+        "<script>"
+        "let ctx,proc,run=false,rd;"
+        "const N=16384,M=N-1,ring=new Float32Array(N);let w=0,r=0,n=0;"
+        "const $=id=>document.getElementById(id);"
+        "$('b').onclick=async()=>{"
+        "if(run){run=false;try{rd.cancel()}catch(e){};"
+        "if(proc)proc.disconnect();if(ctx)ctx.close();"
+        "$('b').textContent='▶ PLAY';return;}"
+        "run=true;$('b').textContent='■ STOP';$('s').textContent='connecting...';"
+        "ctx=new AudioContext();"
+        "proc=ctx.createScriptProcessor(2048,0,1);let pos=0;"
+        "proc.onaudioprocess=e=>{"
+        "const o=e.outputBuffer.getChannelData(0);"
+        "const st=8000/ctx.sampleRate;"
+        "for(let i=0;i<o.length;i++){"
+        "if(n<2){o[i]=0;continue;}"
+        "const a=ring[r],b=ring[(r+1)&M];"
+        "o[i]=a+(b-a)*pos;pos+=st;"
+        "while(pos>=1){pos-=1;r=(r+1)&M;n--;}}};"
+        "proc.connect(ctx.destination);"
+        "try{"
+        "const resp=await fetch('/api/stream',{cache:'no-store'});"
+        "if(!resp.ok)throw new Error('HTTP '+resp.status);"
+        "rd=resp.body.getReader();let carry=null,bytes=0;"
+        "while(run){"
+        "const {done,value}=await rd.read();if(done)break;"
+        "let u=value;"
+        "if(carry){const t=new Uint8Array(carry.length+u.length);"
+        "t.set(carry);t.set(u,carry.length);u=t;}"
+        "const c=u.length>>1;"
+        "const dv=new DataView(u.buffer,u.byteOffset,c*2);"
+        "for(let i=0;i<c;i++){"
+        "if(n>=N){r=(r+1)&M;n--;}"
+        "ring[w]=dv.getInt16(i*2,true)/32768;w=(w+1)&M;n++;}"
+        "bytes+=c*2;"
+        "carry=(u.length&1)?u.subarray(c*2):null;"
+        "if(n>2400)$('s').textContent='streaming '+(bytes/1024|0)+' KB';}"
+        "if(run)$('s').textContent='stream ended';"
+        "}catch(e){$('s').textContent='error: '+e.message;}"
+        "};"
+        "</script></body>";
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    return httpd_resp_send(req, html, HTTPD_RESP_USE_STRLEN);
 }
 
 bool web_cmd_push(const web_cmd_t *c)
@@ -1528,7 +1763,27 @@ esp_err_t http_cmd_handler(httpd_req_t *req)
         }
     } else if (httpd_query_key_value(q, "radio", val, sizeof(val)) == ESP_OK) {
         int item = -1;
-        if (strcmp(val, "step") == 0) {
+        if (strcmp(val, "lineflt") == 0) {
+            /* AMPLFLT (AM power-line filter) toggle: v=0/1 */
+            if (httpd_query_key_value(q, "v", arg, sizeof(arg)) != ESP_OK ||
+                !parse_int(arg, &c.a)) {
+                httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "bad value");
+                return ESP_FAIL;
+            }
+            c.type = WEB_CMD_AM_LINE_FLT;
+            c.a = (c.a != 0);
+        } else if (strcmp(val, "nb") == 0) {
+            /* NB toggle (연구용): v=0/1 */
+            if (httpd_query_key_value(q, "v", arg, sizeof(arg)) != ESP_OK ||
+                !parse_int(arg, &c.a)) {
+                httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "bad value");
+                return ESP_FAIL;
+            }
+            c.type = WEB_CMD_AM_NB;
+            c.a = (c.a != 0);
+        } else if (strcmp(val, "nbprobe") == 0) {
+            c.type = WEB_CMD_AM_NB_PROBE;
+        } else if (strcmp(val, "step") == 0) {
             item = RM_STEP;
         } else if (strcmp(val, "bw") == 0) {
             item = RM_BW;
@@ -2292,6 +2547,24 @@ void http_start(void)
         .handler = http_wifi_api_handler,
         .user_ctx = NULL,
     };
+    httpd_uri_t adc_api = {
+        .uri = "/api/adc",
+        .method = HTTP_GET,
+        .handler = http_adc_handler,
+        .user_ctx = NULL,
+    };
+    httpd_uri_t pcm_api = {
+        .uri = "/api/stream",
+        .method = HTTP_GET,
+        .handler = http_pcm_handler,
+        .user_ctx = NULL,
+    };
+    httpd_uri_t listen_page = {
+        .uri = "/listen",
+        .method = HTTP_GET,
+        .handler = http_listen_handler,
+        .user_ctx = NULL,
+    };
     httpd_uri_t info = {
         .uri = "/info",
         .method = HTTP_GET,
@@ -2363,6 +2636,9 @@ void http_start(void)
     httpd_register_uri_handler(s_http, &status);
     httpd_register_uri_handler(s_http, &cmd);
     httpd_register_uri_handler(s_http, &wifi_api);
+    httpd_register_uri_handler(s_http, &adc_api);
+    httpd_register_uri_handler(s_http, &pcm_api);
+    httpd_register_uri_handler(s_http, &listen_page);
     httpd_register_uri_handler(s_http, &info);
     httpd_register_uri_handler(s_http, &presets);
     httpd_register_uri_handler(s_http, &presets_post);

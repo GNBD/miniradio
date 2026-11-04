@@ -65,6 +65,64 @@
 void fav_side_draw(void);
 void ats_side_draw(void);
 
+/* 목록 진입 시점의 주파수.
+   목록 탐색 중 커서가 채워진 슬롯을 지날 때마다 preview_entry()가
+   s_ui.freq_hz를 그 슬롯 주파수로 바꾸는데, 빈 슬롯은 freq_hz==0이라
+   preview_entry()가 곧바로 돌아가면서 이전 프리뷰 값이 남는다.
+   결과적으로 빈 슬롯에서 홀드 등록할 때 남은 프리뷰 값이 저장되어
+   원래 들으던 주파수가 아닌 다른 주파수가 저장된다.
+   그래서 진입 시점 주파수를 보관해 두고, 빈 슬롯/BACK 커서로 가면
+   그 주파수로 되돌린다. (한 화면에 하나의 목록만 열리므로 공유) */
+static uint32_t s_list_freq0;
+static int      s_list_band0;
+static int      s_list_mode0;
+static bool     s_list_valid0;
+
+static void list_remember(void)
+{
+    s_list_freq0 = s_ui.freq_hz;
+    s_list_band0 = s_ui.band_idx;
+    s_list_mode0 = s_ui.mode;
+    s_list_valid0 = true;
+}
+
+static void list_restore(void)
+{
+    if (!s_list_valid0 ||
+        (s_ui.freq_hz == s_list_freq0 && s_ui.band_idx == s_list_band0 &&
+         s_ui.mode == s_list_mode0)) {
+        return;
+    }
+    s_ui.band_idx = s_list_band0;
+    s_ui.mode = (radio_mode_t)s_list_mode0;
+    s_ui.freq_hz = s_list_freq0;
+    sync_step();
+    apply_step_snap();
+    if (radio_ensure_mode() == ESP_OK) {
+        radio_tune();
+    }
+    s_freq_dirty = false;
+    mark_change();
+    ui_draw_radio_panel(&s_ui);
+    ui_draw_header(&s_ui);
+}
+
+/* 커서가 채워진 슬롯이면 프리뷰, 비어 있거나 BACK이면 진입 주파수 복원. */
+static void list_sync(int cursor, const preset_entry_t *slots)
+{
+    if (cursor > 0 && slots[cursor - 1].freq_hz) {
+        preview_entry(&slots[cursor - 1]);
+    } else {
+        list_restore();
+    }
+}
+
+/* 목록을 선택 없이 떠날 때(타임아웃 등) 원래 주파수로 복원. */
+void list_cancel(void)
+{
+    list_restore();
+}
+
 void tune_entry(const preset_entry_t *p)
 {
     if (p->freq_hz == 0) {
@@ -145,6 +203,7 @@ void open_favorites(void)
     s_hmi = HMI_FAV;
     s_nav_ms = now_ms();
     s_ui.list_mode = true;
+    list_remember();
     fav_draw();
 }
 
@@ -176,9 +235,7 @@ void fav_move(int d)
     } else if (s_fav_cursor >= s_fav_top + UI_SIDE_ROWS) {
         s_fav_top = s_fav_cursor - UI_SIDE_ROWS + 1;
     }
-    if (s_fav_cursor > 0) {
-        preview_entry(&s_presets.slot[s_fav_cursor - 1]);
-    }
+    list_sync(s_fav_cursor, s_presets.slot);
     fav_side_draw();
 }
 
@@ -228,6 +285,7 @@ void fav_long(void)
     }
     storage_save_presets(&s_presets);
     storage_save_names(&s_pnames);
+    list_restore();
     fav_side_draw();
     toast_redraw();
 }
@@ -273,6 +331,7 @@ void open_ats_list(void)
     s_hmi = HMI_ATS_LIST;
     s_nav_ms = now_ms();
     s_ui.list_mode = true;
+    list_remember();
     ats_build();
     ui_draw_radio_panel(&s_ui);
     ui_draw_side_list_title("ATS LIST", &s_ats_ui, &s_ui);
@@ -286,9 +345,7 @@ void ats_list_move(int d)
     } else if (s_ats_cur >= s_ats_top + UI_SIDE_ROWS) {
         s_ats_top = s_ats_cur - UI_SIDE_ROWS + 1;
     }
-    if (s_ats_cur > 0) {
-        preview_entry(&s_ats_list.slot[s_ats_cur - 1]);
-    }
+    list_sync(s_ats_cur, s_ats_list.slot);
     ats_side_draw();
 }
 
@@ -325,6 +382,7 @@ void ats_list_long(void)
     }
     storage_save_ats(&s_ats_list);
     toast("DELETED");
+    list_restore();
     ats_side_draw();
     toast_redraw();
 }
