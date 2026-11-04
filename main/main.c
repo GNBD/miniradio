@@ -140,11 +140,38 @@ uint32_t step_at(int slot, int idx)
 uint32_t eff_step_hz(void)
 {
     int slot = mode_slot(s_ui.mode);
-    int idx = s_step_idx[slot];
+    /* 밴드별 스텝이 있으면 그 밴드의 설정을쓴다(MW/LW/SW 각각 독립).
+       없으면 기존 모드별 설정, 그것도 없으면 대역 기본값. */
+    int idx = -1;
+    if (s_ui.band_idx >= 0 && s_ui.band_idx < STORAGE_BAND_MEM) {
+        idx = s_band_step[s_ui.band_idx];
+    }
+    if (idx < 0) {
+        idx = s_step_idx[slot];
+    }
     if (idx < 0) {
         return band_table[s_ui.band_idx].step_hz;
     }
     return step_at(slot, idx);
+}
+
+int step_idx_cur(void)
+{
+    int idx = -1;
+    if (s_ui.band_idx >= 0 && s_ui.band_idx < STORAGE_BAND_MEM) {
+        idx = s_band_step[s_ui.band_idx];
+    }
+    if (idx < 0) {
+        idx = s_step_idx[mode_slot(s_ui.mode)];
+    }
+    return idx;
+}
+
+void set_step_idx_cur(int idx)
+{
+    if (s_ui.band_idx >= 0 && s_ui.band_idx < STORAGE_BAND_MEM) {
+        s_band_step[s_ui.band_idx] = (int8_t)idx;
+    }
 }
 
 void sync_step(void)
@@ -265,8 +292,6 @@ void dsp_apply(void)
         return;
     }
     if (s_radio.func == SI4732_FUNC_FM) {
-        /* FM soft mute stays at the previous fixed value; the AM/SSB
-           SOFTMUTE setting must not change FM behaviour. */
         si4732_set_fm_soft_mute(&s_radio, 16);
         agc_apply();
     } else {

@@ -127,6 +127,7 @@ static uint32_t s_ats_draw_ms;
 #define SEEK_AM_RSSI_MIN 10
 #define SEEK_AM_SNR_MIN  3
 #define SEEK_HW_TIMEOUT_MS     15000   /* abort a stuck hardware seek */
+#define SEEK_STALL_MS          10000   /* no frequency movement -> stuck */
 #define SEEK_STATUS_RETRY       3
 static bool s_ssb_prepare_failed;
 
@@ -395,6 +396,7 @@ void set_band(int idx)
 
 static bool s_seek_hw_active;
 static uint32_t s_seek_log_ms;
+static uint32_t s_seek_progress_ms;
 static uint8_t s_seek_err_count;
 
 static void seek_draw(void)
@@ -435,10 +437,12 @@ static esp_err_t seek_hw_start(bool up)
     bool fm = (s_ui.mode == RADIO_MODE_FM);
     uint8_t rssi = fm ? SEEK_FM_RSSI_MIN : SEEK_AM_RSSI_MIN;
     uint8_t snr = fm ? SEEK_FM_SNR_MIN : SEEK_AM_SNR_MIN;
-    /* Cancel any previous hardware seek and clear STC before starting a
-       new one. A stale seek would otherwise keep running while the app
-       thinks it is idle. */
-    esp_err_t cerr = si4732_tune_status(&s_radio, true, true,
+    if (fm) {
+        /* Force AUTO bandwidth during the scan: with the narrow 40 kHz
+           filter the chip reports SNR 0 and no channel is ever valid. */
+        si4732_set_fm_bandwidth(&s_radio, 0);
+    }
+    esp_err_t cerr = si4732_tune_status(&s_radio, true, false,
                                         NULL, NULL, NULL, NULL);
     if (cerr != ESP_OK) {
         ESP_LOGW(TAG, "seek pre-cancel failed (%s)", esp_err_to_name(cerr));
@@ -452,13 +456,15 @@ static esp_err_t seek_hw_start(bool up)
     ESP_LOGI(TAG, "seek start fm=%d up=%d f=%lu step=%lu thr=%u/%u",
              (int)fm, (int)up, (unsigned long)s_ui.freq_hz,
              (unsigned long)s_sw_step, rssi, snr);
-    /* Align the seek band bottom to the same raster as the tuning snap
-       (MW 9 kHz starts at 531 kHz, not 520 kHz). */
-    uint32_t bottom = band_snap_freq(s_ui.band_idx, b->min_hz, s_sw_step);
+    /* Use the real band bottom. Snapping it to the step raster made MW
+       stop at 531 kHz instead of scanning down to 520 kHz. */
+    uint32_t bottom = b->min_hz;
     esp_err_t err = si4732_seek_start(&s_radio, up, bottom, b->max_hz,
                                       s_sw_step, rssi, snr);
     s_seek_hw_active = (err == ESP_OK);
-    ESP_LOGI(TAG, "seek cmd err=%s", esp_err_to_name(err));
+    ESP_LOGI(TAG, "seek cmd err=%s (%d) fm=%d func=%d bottom=%lu top=%lu",
+             esp_err_to_name(err), (int)err, (int)fm, (int)s_radio.func,
+             (unsigned long)bottom, (unsigned long)b->max_hz);
     return err;
 }
 
@@ -476,14 +482,17 @@ static void seek_progress(uint32_t freq)
     if (s_sw_step == 0 || s_sw_max <= 0) {
         return;
     }
-    uint32_t diff = (freq >= s_sw_orig) ? freq - s_sw_orig
-                                        : s_sw_orig - freq;
-    int steps = (int)((diff + s_sw_step / 2) / s_sw_step);
+    /* Progress = current position within the band (not the distance from
+       the seek start), so the % moves from the very first step. */
+    const band_desc_t *b = &band_table[s_ui.band_idx];
+    uint32_t base = b->min_hz;
+    int steps = (freq > base) ? (int)((freq - base) / s_sw_step) : 0;
     if (steps > s_sw_max) {
         steps = s_sw_max;
     }
     s_sw_steps = steps;
     s_ui.sw_steps = steps;
+    s_seek_progress_ms = now_ms();
 }
 
 bool seek_start(bool up)
@@ -496,13 +505,11 @@ bool seek_start(bool up)
     }
 
     const band_desc_t *b = &band_table[s_ui.band_idx];
+    /* Follow the step configured for the current frequency/band. */
     uint32_t step = eff_step_hz();
-    if (s_ui.mode == RADIO_MODE_FM) {
-        step = 100000;
-    } else if (step < 5000u) {
-        /* 1 kHz is the wheel step, not a usable seek raster: use the band
-           raster instead (MW/LW 9 kHz, SW 5 kHz). */
-        step = (s_ui.band_idx == 1 || s_ui.band_idx == 2) ? 9000u : 5000u;
+    if (step == 0) {
+        step = (s_ui.mode == RADIO_MODE_FM) ? 100000u
+             : ((s_ui.band_idx == 1 || s_ui.band_idx == 2) ? 9000u : 5000u);
     }
 
     s_sw_step = step;
@@ -516,11 +523,11 @@ bool seek_start(bool up)
     s_seeking = true;
     s_ui.seeking = true;
     s_seek_started = now_ms();
+    s_seek_progress_ms = s_seek_started;
     s_seek_log_ms = 0;
     s_seek_err_count = 0;
-    if (s_radio_ok) {
-        si4732_set_mute(&s_radio, true);
-    }
+    /* Do not hard-mute during seek: the mute state stops the SNR reading
+       used by the seek criterion, so every channel looks invalid. */
     if (seek_hw_start(up) != ESP_OK) {
         s_seeking = false;
         s_ui.seeking = false;
@@ -547,8 +554,6 @@ esp_err_t seek_tune(uint32_t freq)
 
 void seek_finish(bool found)
 {
-    /* Always stop the hardware seek. A completed seek is harmless to cancel;
-       an early/failed one must not keep scanning after the UI stops. */
     if (s_seek_hw_active) {
         seek_hw_cancel(NULL);
     }
@@ -564,16 +569,16 @@ void seek_finish(bool found)
     s_ui.seeking = false;
     fm_seek_thresholds(false);
     am_seek_thresholds(false);
+    if (s_ui.mode == RADIO_MODE_FM) {
+        si4732_set_fm_bandwidth(&s_radio, s_bw[0]);
+    }
     if (s_radio_ok) {
         si4732_set_mute(&s_radio, false);
     }
     if (found) {
-        /* Hardware seek changed the station without a tune command, so the
-           previous station's RDS data must be dropped here. */
         if (s_ui.mode == RADIO_MODE_FM) {
             rds_parser_reset(&s_rds);
         } else {
-            /* Keep the displayed frequency on the band raster. */
             uint32_t snapped = band_snap_freq(s_ui.band_idx, s_ui.freq_hz,
                                               eff_step_hz());
             if (snapped != s_ui.freq_hz) {
@@ -607,6 +612,9 @@ void seek_cancel(void)
     s_ui.seeking = false;
     fm_seek_thresholds(false);
     am_seek_thresholds(false);
+    if (s_ui.mode == RADIO_MODE_FM) {
+        si4732_set_fm_bandwidth(&s_radio, s_bw[0]);
+    }
     toast("SEEK STOP");
 }
 
@@ -631,6 +639,9 @@ void seek_stop(void)
     s_freq_dirty = true;
     fm_seek_thresholds(false);
     am_seek_thresholds(false);
+    if (s_ui.mode == RADIO_MODE_FM) {
+        si4732_set_fm_bandwidth(&s_radio, s_bw[0]);
+    }
     ui_draw_all(&s_ui);
     toast("SEEK STOP");
 }
@@ -638,8 +649,6 @@ void seek_stop(void)
 void seek_reverse(bool up)
 {
     (void)up;
-    /* Opposite encoder turn means "stop", not "start a new seek in the
-       other direction". seek_stop() sends TUNE_STATUS CANCEL to the chip. */
     seek_stop();
 }
 
@@ -648,9 +657,16 @@ void seek_poll(uint32_t now)
     if (!s_seeking) {
         return;
     }
-    if ((uint32_t)(now - s_seek_started) > SEEK_HW_TIMEOUT_MS) {
-        ESP_LOGW(TAG, "seek timeout -> cancel");
-        seek_finish(false);   /* seek_finish() cancels the hardware seek */
+    /* Absolute ceiling only; SW needs far longer than the old 15 s. */
+    if ((uint32_t)(now - s_seek_started) > SEEK_TIMEOUT) {
+        ESP_LOGW(TAG, "seek timeout (absolute) -> cancel");
+        seek_finish(false);
+        return;
+    }
+    /* Abort only if the scan has stopped moving (stuck chip). */
+    if ((uint32_t)(now - s_seek_progress_ms) > SEEK_STALL_MS) {
+        ESP_LOGW(TAG, "seek stalled (no freq progress) -> cancel");
+        seek_finish(false);
         return;
     }
 
@@ -731,6 +747,9 @@ void ats_cancel(void)
     }
     s_ats = ATS_DONE;
     fm_seek_thresholds(false);
+    if (s_ui.mode == RADIO_MODE_FM) {
+        si4732_set_fm_bandwidth(&s_radio, s_bw[0]);
+    }
     if (s_radio_ok) {
         si4732_set_mute(&s_radio, false);
     }
@@ -756,6 +775,9 @@ void ats_finish(const char *msg)
     s_ats = ATS_DONE;
     s_ats_hold = false;
     fm_seek_thresholds(false);
+    if (s_ui.mode == RADIO_MODE_FM) {
+        si4732_set_fm_bandwidth(&s_radio, s_bw[0]);
+    }
     s_ui.seeking = false;
     s_ats_list.count = s_ats_found;
     storage_save_ats(&s_ats_list);

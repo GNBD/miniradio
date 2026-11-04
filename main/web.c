@@ -1316,7 +1316,7 @@ esp_err_t http_status_handler(httpd_req_t *req)
         freq, (unsigned long)s_ui.freq_hz, band_table[s_ui.band_idx].name,
         s_ui.band_idx, bands, mode_str(s_ui.mode),
         (s_ui.mode == RADIO_MODE_FM && s_ui.stereo) ? "true" : "false",
-        (s_step_idx[slot] < 0) ? 0 : (s_step_idx[slot] + 1), steps,
+        (step_idx_cur() < 0) ? 0 : (step_idx_cur() + 1), steps,
         bw_index(slot, s_bw[slot]), bws, (long)s_bfo, BFO_MAX_HZ,
         band_is_ssb(s_ui.mode) ? "true" : "false",
         s_rds_on ? "true" : "false",

@@ -125,6 +125,13 @@ typedef struct {
     uint16_t mask;    /* QA_* 비트마스크 */
 } storage_quick_t;
 
+/* 밴드별 스텝 인덱스 (별도 NVS 키, -1 = 대역 기본) */
+#define STORAGE_MAGIC_BSTEP 0x4D425331  /* 'MBS1' */
+typedef struct {
+    uint32_t magic;
+    int8_t   step_idx[STORAGE_BAND_MEM];
+} storage_bandstep_t;
+
 /* v1 구조체 (마이그레이션 전용) */
 typedef struct {
     uint32_t magic;
@@ -184,6 +191,12 @@ esp_err_t storage_load_splash(storage_splash_t *out);
 esp_err_t storage_save_splash(const storage_splash_t *in);
 esp_err_t storage_load_quick(storage_quick_t *out);
 esp_err_t storage_save_quick(const storage_quick_t *in);
+
+/** @brief 밴드별 스텝 인덱스 로드 (없으면 전부 -1) */
+esp_err_t storage_load_bandstep(storage_bandstep_t *out);
+
+/** @brief 밴드별 스텝 인덱스 저장 */
+esp_err_t storage_save_bandstep(const storage_bandstep_t *in);
 esp_err_t storage_load_web_auth(char *user, size_t un, char *pass, size_t pn);
 esp_err_t storage_save_web_auth(const char *user, const char *pass);
 esp_err_t storage_load_web_auth_on(bool *on);

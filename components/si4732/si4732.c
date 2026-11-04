@@ -154,10 +154,17 @@ esp_err_t si4732_command(si4732_t *dev, uint8_t cmd, const uint8_t *args, size_t
     }
     err = si4732_write(dev, buf, args_len + 1);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "cmd 0x%02X write failed: %s", cmd, esp_err_to_name(err));
+        ESP_LOGE(TAG, "cmd 0x%02X write failed: %s (%d)", cmd,
+                 esp_err_to_name(err), (int)err);
         return err;
     }
-    return si4732_wait_cts_checked(dev, true);
+    /* ERR status is fatal. */
+    esp_err_t we = si4732_wait_cts_checked(dev, true);
+    if (we != ESP_OK) {
+        ESP_LOGE(TAG, "cmd 0x%02X status err: %s (%d)", cmd,
+                 esp_err_to_name(we), (int)we);
+    }
+    return we;
 }
 
 esp_err_t si4732_read_response(si4732_t *dev, uint8_t *payload, size_t payload_len)
@@ -412,6 +419,9 @@ esp_err_t si4732_am_tune_fast(si4732_t *dev, uint32_t freq_hz,
     return err;
 }
 
+/* AN332 seek spacing units: FM_SEEK_FREQ_SPACING is in 10 kHz steps
+   (10 = 100 kHz), AM_SEEK_FREQ_SPACING is in kHz (5 = 5 kHz).
+   Do not convert these to an index code. */
 esp_err_t si4732_seek_start(si4732_t *dev, bool up,
                             uint32_t bottom_hz, uint32_t top_hz,
                             uint32_t spacing_hz,
@@ -425,8 +435,6 @@ esp_err_t si4732_seek_start(si4732_t *dev, bool up,
     if (spacing < 1u) {
         spacing = 1u;
     }
-    /* AN332: FM seek thresholds are 7-bit (0..127), AM seek thresholds
-       are 6-bit (0..63). Writing out-of-range values is undefined. */
     uint8_t thr_max = fm ? 127u : 63u;
     if (rssi_threshold > thr_max) {
         rssi_threshold = thr_max;
@@ -463,7 +471,9 @@ esp_err_t si4732_seek_start(si4732_t *dev, bool up,
         if (err != ESP_OK) {
             return err;
         }
-        uint8_t arg = (uint8_t)((up ? SI4732_SEEK_UP : 0) | SI4732_SEEK_WRAP);
+        /* No WRAP: with wrap the chip never reports completion at the band
+           edge (STC stays 0) and just loops forever. */
+        uint8_t arg = (uint8_t)(up ? SI4732_SEEK_UP : 0);
         return si4732_command(dev, SI4732_CMD_FM_SEEK_START, &arg, 1);
     }
 
@@ -492,7 +502,7 @@ esp_err_t si4732_seek_start(si4732_t *dev, bool up,
         return err;
     }
     uint8_t args[5] = {
-        (uint8_t)((up ? SI4732_SEEK_UP : 0) | SI4732_SEEK_WRAP),
+        (uint8_t)(up ? SI4732_SEEK_UP : 0),
         0x00, 0x00, 0x00,
         (uint8_t)(bottom > 1800u ? 1u : 0u),
     };
@@ -530,7 +540,10 @@ esp_err_t si4732_tune_status(si4732_t *dev, bool intack, bool cancel,
         *valid = (buf[1] & 0x01) != 0; /* RESP1 VALID */
     }
     if (bltf) {
-        *bltf = (buf[1] & 0x80) != 0;  /* RESP1 BLTF */
+        /* main1-essential behaviour: bit7 is not a reliable band-limit
+           flag on this part. Treating FM bit2 as BLTF made seek finish
+           early (valid=0) and skip active stations. */
+        *bltf = (buf[1] & 0x80) != 0;
     }
     if (freq_hz) {
         uint32_t units = ((uint32_t)buf[2] << 8) | buf[3];   /* READFREQ */
@@ -681,7 +694,15 @@ static void parse_rsq(const uint8_t *raw, size_t len, si4732_rsq_t *out)
 esp_err_t si4732_fm_rsq(si4732_t *dev, si4732_rsq_t *out)
 {
     ESP_RETURN_ON_FALSE(out, ESP_ERR_INVALID_ARG, TAG, "null out");
-    uint8_t arg = 0x00;               /* INTACK=0 */
+    /* RSQINT must be enabled for the chip to run periodic RSQ measurements;
+       with FM_RSQ_INT_SOURCE = 0 (default) the SNR field stays 0 and every
+       channel is then judged invalid by the seek/tune thresholds. */
+    static bool rsq_int_on;
+    if (!rsq_int_on) {
+        si4732_set_property(dev, SI4732_PROP_FM_RSQ_INT_SOURCE, 0x000F);
+        rsq_int_on = true;
+    }
+    uint8_t arg = 0x01;               /* INTACK=1: clear RSQINT, refresh */
     uint8_t raw[7];
     esp_err_t err = si4732_command_read(dev, SI4732_CMD_FM_RSQ_STATUS,
                                         &arg, 1, raw, sizeof(raw));
@@ -695,7 +716,12 @@ esp_err_t si4732_fm_rsq(si4732_t *dev, si4732_rsq_t *out)
 esp_err_t si4732_am_rsq(si4732_t *dev, si4732_rsq_t *out)
 {
     ESP_RETURN_ON_FALSE(out, ESP_ERR_INVALID_ARG, TAG, "null out");
-    uint8_t arg = 0x00;
+    static bool rsq_int_on;
+    if (!rsq_int_on) {
+        si4732_set_property(dev, SI4732_PROP_AM_RSQ_INTERRUPTS, 0x000F);
+        rsq_int_on = true;
+    }
+    uint8_t arg = 0x01;               /* INTACK=1 */
     uint8_t raw[5];   /* AM_RSQ_STATUS: RESP1..RESP5 */
     esp_err_t err = si4732_command_read(dev, SI4732_CMD_AM_RSQ_STATUS,
                                         &arg, 1, raw, sizeof(raw));
@@ -821,19 +847,12 @@ esp_err_t si4732_set_fm_soft_mute(si4732_t *dev, uint8_t atten_db)
     if (atten_db > 63) {
         atten_db = 63;
     }
-    esp_err_t err = si4732_set_property(dev,
-                                        SI4732_PROP_FM_SOFT_MUTE_MAX_ATTENUATION,
-                                        atten_db);
-    if (err != ESP_OK || atten_db == 0) {
-        return err;
-    }
-    /* AN332: recommended SMSLOPE = ceil(SMATTN / SMTHR). The default
-       FM_SOFT_MUTE_SNR_THRESHOLD is 4 dB. */
-    uint8_t slope = (uint8_t)((atten_db + 3u) / 4u);
-    if (slope < 1u) {
-        slope = 1u;
-    }
-    return si4732_set_property(dev, SI4732_PROP_FM_SOFT_MUTE_SLOPE, slope);
+    /* 1.2.26 behaviour: only set the max attenuation. Writing
+       FM_SOFT_MUTE_SLOPE (0x1301) made the chip report SNR 0 and kept
+       every channel VALID=0. */
+    return si4732_set_property(dev,
+                               SI4732_PROP_FM_SOFT_MUTE_MAX_ATTENUATION,
+                               atten_db);
 }
 
 esp_err_t si4732_fm_agc_override(si4732_t *dev, bool rf_agc_disable,

@@ -122,6 +122,17 @@ void do_save(void)
     esp_err_t e_pre = storage_save_presets(&s_presets);
     esp_err_t e_ats = storage_save_ats(&s_ats_list);
     esp_err_t e_rfg = storage_save_rf_gain(s_rfgain);
+    {
+        storage_bandstep_t bs = { 0 };
+        bs.magic = STORAGE_MAGIC_BSTEP;
+        for (int i = 0; i < STORAGE_BAND_MEM; ++i) {
+            bs.step_idx[i] = s_band_step[i];
+        }
+        esp_err_t e_bs = storage_save_bandstep(&bs);
+        if (e_bs != ESP_OK) {
+            ESP_LOGW(TAG, "bandstep save failed (%s)", esp_err_to_name(e_bs));
+        }
+    }
     if (e_ext != ESP_OK || e_cfg != ESP_OK || e_pre != ESP_OK ||
         e_ats != ESP_OK || e_rfg != ESP_OK) {
         ESP_LOGW(TAG, "save failed ext=%s cfg=%s pre=%s ats=%s rfg=%s",
@@ -188,6 +199,16 @@ void restore_settings(const storage_settings_t *cfg)
     }
 
     storage_load_splash(&s_splash);
+    {
+        storage_bandstep_t bs;
+        storage_load_bandstep(&bs);
+        for (int i = 0; i < STORAGE_BAND_MEM; ++i) {
+            int v = bs.step_idx[i];
+            int maxn = step_count(mode_slot(band_table[i].default_mode));
+            /* -1 = 대역 기본, 그 외는 해당 밴드 모드의 스텝 목록 범위 */
+            s_band_step[i] = (v >= 0 && v < maxn) ? (int8_t)v : -1;
+        }
+    }
     {
         storage_quick_t qcfg;
         storage_load_quick(&qcfg);

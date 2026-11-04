@@ -26,6 +26,7 @@ battery_state_t    s_batt;
 hmi_t s_hmi = HMI_TUNE;
 
 int     s_step_idx[3] = {-1, -1, -1};
+int8_t  s_band_step[STORAGE_BAND_MEM];   /* 밴드별 스텝, -1=대역 기본 */
 uint8_t s_bw[3] = {1, 3, 1};   /* FM 110 kHz (AUTO not supported on FMRX 3.0) */
 int32_t s_bfo;
 uint8_t s_brightness = 100;

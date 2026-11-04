@@ -156,6 +156,7 @@ extern battery_state_t    s_batt;
 extern hmi_t s_hmi;
 
 extern int     s_step_idx[3];
+extern int8_t  s_band_step[STORAGE_BAND_MEM];
 extern uint8_t s_bw[3];
 extern int32_t s_bfo;
 extern uint8_t s_brightness;
@@ -356,6 +357,8 @@ int mode_slot(radio_mode_t m);
 const char *mode_str(radio_mode_t m);
 int step_count(int slot);
 uint32_t step_at(int slot, int idx);
+int step_idx_cur(void);   /* 현재 밴드의 스텝 인덱스 (-1=대역 기본) */
+void set_step_idx_cur(int idx);   /* 현재 밴드에 스텝 인덱스 저장 */
 uint32_t eff_step_hz(void);
 void sync_step(void);
 void mark_change(void);

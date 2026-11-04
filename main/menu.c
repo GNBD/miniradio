@@ -185,7 +185,7 @@ void rmenu_build(void)
     snprintf(s_rbuf[RM_BW], sizeof(s_rbuf[RM_BW]), "%s", bw_label());
 
     int slot = mode_slot(s_ui.mode);
-    if (s_step_idx[slot] < 0) {
+    if (step_idx_cur() < 0) {
         snprintf(s_rbuf[RM_STEP], sizeof(s_rbuf[RM_STEP]), "BAND");
     } else {
         int st = (int)eff_step_hz();
@@ -436,7 +436,7 @@ int opt_sel(int page, int item)
                                  RADIO_MODE_FM) ? 0
                                 : ((int)s_ui.mode - (int)RADIO_MODE_AM);
         case RM_BW:      return bw_index(slot, s_bw[slot]);
-        case RM_STEP:    return (s_step_idx[slot] < 0) ? 0 : (s_step_idx[slot] + 1);
+        case RM_STEP:    return (step_idx_cur() < 0) ? 0 : (step_idx_cur() + 1);
         case RM_RDS:     return s_rds_on ? 0 : 1;
         case RM_STEREO:  return s_stereo_force ? 1 : 0;
         case RM_DEEMPH:  return s_deemph_75 ? 1 : 0;
@@ -821,7 +821,7 @@ void opt_apply(int page, int item, int idx)
             mark_change();
             break;
         case RM_STEP:
-            s_step_idx[slot] = idx - 1;
+            set_step_idx_cur(idx - 1);   /* 현재 밴드(MW/LW/SW...)에 저장 */
             sync_step();
             apply_step_snap();
             radio_tune();

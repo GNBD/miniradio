@@ -1,0 +1,32 @@
+{
+  "name": "GNBD miniradio",
+  "version": "1.2.28",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "download/bm/ats-mini-bootloader-v4.bin",
+          "offset": 0
+        },
+        {
+          "path": "download/bm/ats-mini-partitions-v4.bin",
+          "offset": 32768
+        },
+        {
+          "path": "download/ota_data_initial.bin",
+          "offset": 57344
+        },
+        {
+          "path": "download/GNBD_miniradio_1.2.28_app.bin",
+          "offset": 65536
+        },
+        {
+          "path": "download/bm/ats-mini-recovery-4.3.5.bin",
+          "offset": 8781824
+        }
+      ]
+    }
+  ]
+}
