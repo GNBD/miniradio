@@ -1,8 +1,5 @@
 https://github.com/esp32-si4732/ats-mini/releases/download/v2.45/ats-mini-v2.45-ospi-ota.bin
-https://gnbdatsmini.netlify.app/download/GNBD_miniradio_1.2.28_ota.bin
-https://gnbdatsmini.netlify.app/download/GNBD_miniradio_1.2.27_ota.bin
-https://gnbdatsmini.netlify.app/download/GNBD_miniradio_1.2.26_ota.bin
-https://gnbdatsmini.netlify.app/download/GNBD_miniradio_1.1.25_ota.bin
+https://gnbdatsmini.netlify.app/download/GNBD_miniradio_1.2.33_ota.bin
 https://github.com/GNBD/ats-mini-dualboot/releases/download/v4.3.5-dualboot/DBFMupdater.bin
 https://github.com/esp32-si4732/ats-mini/releases/download/v2.44/ats-mini-v2.44-ospi-ota.bin
 https://github.com/esp32-si4732/ats-mini/releases/download/v2.43/ats-mini-v2.43-ospi-ota.bin

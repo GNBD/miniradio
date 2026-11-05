@@ -933,7 +933,7 @@ const char *const RM_LABELS[RM_COUNT] = {
     "VOLUME", "AGC", "RF GAIN", "AVC", "SOFTMUTE", "SQUELCH",
     "MOD A", "MOD B", "MOD C", "MOD D",
     "MOD E", "MOD F", "MOD G", "MOD H",
-    "SETTINGS"
+    "SETTINGS", "MORE"
 };
 
 /* ------------------------------------------------------------- 메뉴 */
@@ -943,7 +943,7 @@ const char *const ST_LABELS[ST_COUNT] = {
     "BRIGHT", "SCREEN", "SLEEP", "POWER SAVE",
     "UNIT", "THEME",
     "TIME", "UTC",
-    "BATT", "BATT CAL", "CPU", "WI-FI",
+    "BATT", "BATT CAL", "CPU", "WI-FI", "BLUETOOTH", "BLE RST",
     "EIBI", "QUICK SET",
     "SIG spd", "BOTTOM",
     "MOD A", "MOD B", "MOD C", "MOD D",

@@ -63,6 +63,8 @@
 #include "decode.h"
 #include "weather.h"
 #include "hmi.h"
+#include "ble.h"
+#include "net_bridge.h"
 
 const char *TAG = "main";
 bool     s_tune_save_pending;
@@ -99,6 +101,13 @@ const ui_app_t g_apps[] = {
     { "radio",   "RADIO",   "FM", DISPLAY_FONT_SMALL, true,  app_open_radio },
     { "clock",   "CLOCK",   "12", DISPLAY_FONT_SMALL, false, app_open_clock },
     { "weather", "WEATHER", "WX", DISPLAY_FONT_TINY,  false, app_open_weather },
+};
+
+/* MORE 타일 목록 (홈 APPS와 별도, 메뉴 → MORE에서 진입) */
+const ui_app_t g_mm_apps[] = {
+    { "weather", "WEATHER", "WX", DISPLAY_FONT_TINY,  false, app_open_weather },
+    { "clock",   "CLOCK",   "12", DISPLAY_FONT_SMALL, false, app_open_clock },
+    { "decode",  "DECODE",  "DC", DISPLAY_FONT_SMALL, false, app_open_decode },
 };
 
 
@@ -417,6 +426,414 @@ static const char *reset_reason_str(esp_reset_reason_t r)
     }
 }
 
+/* ------------------------------------------------- BLE 원격 명령 처리 */
+
+static void ble_build_status(char *msg, size_t n)
+{
+    int rssi = s_ui.have_rsq ? (int)s_ui.rsq.rssi : 0;
+    int snr = s_ui.have_rsq ? (int)s_ui.rsq.snr : 0;
+    int batt = s_ui.have_battery ? (int)s_ui.battery.percent : -1;
+    int mv = s_ui.have_battery ? (int)s_ui.battery.millivolt : -1;
+    snprintf(msg, n, "%lu,%d,%d,%u,%d,%d,%d,%d,%d",
+             (unsigned long)s_ui.freq_hz, (int)s_ui.mode, s_ui.band_idx,
+             (unsigned)audio_get_volume(), rssi, snr, batt, ble_get_state(), mv);
+}
+
+/* RDS / EiBi 방송국 텍스트 */
+static void ble_station_text(char *out, size_t n)
+{
+    out[0] = '\0';
+    if (s_ui.mode == RADIO_MODE_FM && s_rds.ps_valid && s_rds.ps[0]) {
+        snprintf(out, n, "%s", s_rds.ps);
+    } else if (s_rds.rt_valid && s_rds.rt[0]) {
+        snprintf(out, n, "%s", s_rds.rt);
+    } else if (s_ui.station && s_ui.station[0]) {
+        snprintf(out, n, "%s", s_ui.station);
+    }
+}
+
+static void ble_send_status(void)
+{
+    char msg[96];
+    ble_build_status(msg, sizeof(msg));
+    ble_notify(msg, strlen(msg));
+}
+
+static void ble_send_presets(void)
+{
+    char buf[80];
+    snprintf(buf, sizeof(buf), "PC,%d", s_presets.count);
+    ble_notify(buf, strlen(buf));
+    for (int i = 0; i < s_presets.count; ++i) {
+        preset_entry_t *e = &s_presets.slot[i];
+        const char *nm = s_pnames.name[i];
+        snprintf(buf, sizeof(buf), "P,%d,%lu,%d,%d,%s", i,
+                 (unsigned long)e->freq_hz, e->band, e->mode, nm);
+        if (!ble_notify(buf, strlen(buf))) {
+            snprintf(buf, sizeof(buf), "P,%d,%lu,%d,%d", i,
+                     (unsigned long)e->freq_hz, e->band, e->mode);
+            ble_notify(buf, strlen(buf));
+            snprintf(buf, sizeof(buf), "N,%d,%s", i, nm);
+            ble_notify(buf, strlen(buf));
+        }
+    }
+    ble_notify("PE", 2);
+}
+
+/* 원격 볼륨 변경 시 라디오 화면에도 VOL 오버레이 표시 */
+static void ble_volume_osd(void)
+{
+    s_ui.volume = audio_get_volume();
+    if (s_hmi == HMI_TUNE) {
+        open_volume(false);
+    } else if (s_hmi == HMI_VOL) {
+        s_vol_ms = now_ms();
+        ui_draw_volume(&s_ui, true);
+    } else {
+        ui_draw_status(&s_ui);
+    }
+}
+
+/* -------------------------------------------------- Radio 설정 스냅샷 */
+
+static void ble_send_settings(void)
+{
+    char buf[220];
+    int slot = mode_slot(s_ui.mode);
+
+    /* 튜닝 스텝: 선택 인덱스, 개수, 각 스텝(Hz) */
+    int sel = opt_sel(HMI_MENU, RM_STEP);
+    int cnt = step_count(slot) + 1;
+    int n = snprintf(buf, sizeof(buf), "RSTEP,%d,%d", sel, cnt);
+    for (int i = 0; i < cnt && n < (int)sizeof(buf) - 12; ++i) {
+        uint32_t hz = (i == 0) ? 0 : step_at(slot, i - 1);
+        n += snprintf(buf + n, sizeof(buf) - n, ",%lu", (unsigned long)hz);
+    }
+    ble_notify(buf, strlen(buf));
+
+    /* 대역폭: 선택 인덱스, 개수, 라벨(| 구분) */
+    static const char *fm[]  = {"AUTO", "40K", "60K", "84K", "110K"};
+    static const char *am[]  = {"1K", "1.8K", "2K", "2.5K", "3K", "4K", "6K"};
+    static const char *ssb[] = {"500", "1K", "1.2K", "2.2K", "3K", "4K"};
+    sel = opt_sel(HMI_MENU, RM_BW);
+    cnt = bw_max() + 1;
+    n = snprintf(buf, sizeof(buf), "RBW,%d,%d,", sel, cnt);
+    for (int i = 0; i < cnt && n < (int)sizeof(buf) - 10; ++i) {
+        const char *lb = (slot == 0) ? fm[i] : (slot == 1 ? am[i] : ssb[i]);
+        n += snprintf(buf + n, sizeof(buf) - n, "%s%s", i ? "|" : "", lb);
+    }
+    ble_notify(buf, strlen(buf));
+
+    snprintf(buf, sizeof(buf), "RAGC,%d,%d",
+             opt_sel(HMI_MENU, RM_AGC), (int)agc_max_idx());
+    ble_notify(buf, strlen(buf));
+
+    snprintf(buf, sizeof(buf), "RSQ,%d", opt_sel(HMI_MENU, RM_SQUELCH));
+    ble_notify(buf, strlen(buf));
+
+    snprintf(buf, sizeof(buf), "RRDS,%d", opt_sel(HMI_MENU, RM_RDS));
+    ble_notify(buf, strlen(buf));
+
+    snprintf(buf, sizeof(buf), "RSTE,%d", opt_sel(HMI_MENU, RM_STEREO));
+    ble_notify(buf, strlen(buf));
+
+    snprintf(buf, sizeof(buf), "RDE,%d", opt_sel(HMI_MENU, RM_DEEMPH));
+    ble_notify(buf, strlen(buf));
+
+    snprintf(buf, sizeof(buf), "RMODE,%d,%d", (int)s_ui.mode,
+             band_table[s_ui.band_idx].default_mode == RADIO_MODE_FM ? 1 : 0);
+    ble_notify(buf, strlen(buf));
+}
+
+static void ble_apply_cmd(int c, int arg)
+{
+    switch (c) {
+    case 'U':
+        remote_tune_step(1);
+        break;
+
+    case 'D':
+        remote_tune_step(-1);
+        break;
+
+    case 'u':
+        set_band((s_ui.band_idx + 1) % (int)band_count);
+        page_radio();
+        break;
+
+    case 'd':
+        set_band((s_ui.band_idx + (int)band_count - 1) % (int)band_count);
+        page_radio();
+        break;
+
+    case 'M': {
+        static const radio_mode_t seq[] = {
+            RADIO_MODE_FM, RADIO_MODE_AM, RADIO_MODE_LSB, RADIO_MODE_USB
+        };
+        radio_mode_t m = seq[0];
+        for (int i = 0; i < 4; ++i) {
+            if (seq[i] == s_ui.mode) {
+                m = seq[(i + 1) % 4];
+                break;
+            }
+        }
+        if (band_table[s_ui.band_idx].default_mode == RADIO_MODE_FM) {
+            m = RADIO_MODE_FM;
+        } else if (m == RADIO_MODE_FM) {
+            m = RADIO_MODE_AM;
+        }
+        if (m != s_ui.mode) {
+            s_ui.mode = m;
+            sync_step();
+            apply_step_snap();
+            radio_apply();
+            mark_change();
+            s_freq_dirty = true;
+            page_radio();
+        }
+    } break;
+
+    case '+':
+    case '-': {
+        int v = (int)audio_get_volume() + (c == '+' ? 1 : -1);
+        if (v < 0) { v = 0; }
+        if (v > AUDIO_VOLUME_MAX) { v = AUDIO_VOLUME_MAX; }
+        audio_set_volume((uint8_t)v);
+        s_ui.volume = audio_get_volume();
+        mark_change();
+        ble_volume_osd();
+        break;
+    }
+
+    case 'V': {
+        int v = arg;
+        if (v < 0) { v = 0; }
+        if (v > AUDIO_VOLUME_MAX) { v = AUDIO_VOLUME_MAX; }
+        audio_set_volume((uint8_t)v);
+        s_ui.volume = audio_get_volume();
+        mark_change();
+        ble_volume_osd();
+        break;
+    }
+
+    case 'F': {
+        /* 절대 주파수 설정 (Hz) */
+        uint32_t f = band_clamp_freq(s_ui.band_idx, (uint32_t)arg);
+        s_ui.freq_hz = f;
+        sync_step();
+        apply_step_snap();
+        f = s_ui.freq_hz;
+        if (radio_tune() != ESP_OK) {
+            ESP_LOGW(TAG, "remote freq failed");
+        }
+        s_freq_dirty = true;
+        s_ui.preset_slot = preset_index_for_freq(f, s_ui.band_idx);
+        s_ui.ats_slot = ats_index_for_freq(f, s_ui.band_idx);
+        mark_change();
+        if (s_hmi == HMI_TUNE) {
+            ui_draw_radio_freq(&s_ui);
+        } else {
+            page_radio();
+        }
+        break;
+    }
+
+    case 'B':
+        if (arg >= 0 && arg < (int)band_count) {
+            set_band(arg);
+            page_radio();
+        }
+        break;
+
+    case 'O': {
+        /* 절대 모드 설정 (radio_mode_t) */
+        radio_mode_t m = (radio_mode_t)arg;
+        if (band_table[s_ui.band_idx].default_mode == RADIO_MODE_FM) {
+            m = RADIO_MODE_FM;
+        } else if (m == RADIO_MODE_FM || m > RADIO_MODE_USB) {
+            m = RADIO_MODE_AM;
+        }
+        if (m != s_ui.mode) {
+            s_ui.mode = m;
+            sync_step();
+            apply_step_snap();
+            radio_apply();
+            mark_change();
+            s_freq_dirty = true;
+            page_radio();
+        }
+        break;
+    }
+
+    case 'S':
+        seek_start(true);
+        break;
+
+    case 's':
+        seek_start(false);
+        break;
+
+    case 'P':
+        if (s_presets.count > 0) {
+            int cur = preset_index_for_freq(s_ui.freq_hz, s_ui.band_idx);
+            int next = (cur + 1) % s_presets.count;
+            tune_entry(&s_presets.slot[next]);
+            page_radio();
+        }
+        break;
+
+    case 'W':
+        s_wifi_mode = (uint8_t)((s_wifi_mode + 1) % 3);
+        if (s_wifi_mode == 0) {
+            wifi_off();
+        } else if (s_wifi_mode == 1) {
+            if (wifi_start_ap() != ESP_OK) { s_wifi_mode = 0; }
+        } else {
+            if (s_wifi_ssid[0] && wifi_sta_connect() == ESP_OK) {
+                /* 연결 시도 */
+            } else {
+                s_wifi_mode = 0;
+                wifi_off();
+            }
+        }
+        s_ui.wifi_state = s_wifi_mode;
+        ui_refresh_top();
+        break;
+
+    case 'Q':
+        ble_send_status();
+        break;
+
+    case 'L':
+        ble_send_presets();
+        break;
+
+    case 'y':
+        on_encoder(-1);
+        break;
+
+    case 'Y':
+        on_encoder(1);
+        break;
+
+    case 'j':
+        on_button(false);
+        break;
+
+    case 'J':
+        on_button(true);
+        break;
+
+    case 'g':
+        ble_send_settings();
+        break;
+
+    case 'c': {
+        static const uint8_t map[] = {
+            RM_STEP, RM_BW, RM_AGC, RM_SQUELCH,
+            RM_RDS, RM_STEREO, RM_DEEMPH,
+        };
+        int item = arg & 0xFF;
+        int val = (arg >> 8) & 0xFF;
+        if (item >= 0 && item < (int)(sizeof(map) / sizeof(map[0]))) {
+            opt_apply(HMI_MENU, map[item], val);
+            ble_send_settings();
+            ble_send_status();
+        }
+        break;
+    }
+
+    case 'T':
+        if (arg >= 0 && arg < s_presets.count) {
+            tune_entry(&s_presets.slot[arg]);
+            page_radio();
+        }
+        break;
+
+    case 'K':
+        if (preset_index_for_freq(s_ui.freq_hz, s_ui.band_idx) < 0 &&
+            s_presets.count < STORAGE_PRESET_SLOTS) {
+            int i = s_presets.count++;
+            s_presets.slot[i].freq_hz = s_ui.freq_hz;
+            s_presets.slot[i].band = (uint8_t)s_ui.band_idx;
+            s_presets.slot[i].mode = (uint8_t)s_ui.mode;
+            s_pnames.name[i][0] = '\0';
+            storage_save_presets(&s_presets);
+            storage_save_names(&s_pnames);
+            toast("PRESET SAVED");
+        } else {
+            toast("ALREADY SAVED");
+        }
+        ble_send_presets();
+        break;
+
+    case 'X':
+        if (arg >= 0 && arg < s_presets.count) {
+            for (int i = arg; i < s_presets.count - 1; ++i) {
+                s_presets.slot[i] = s_presets.slot[i + 1];
+                memcpy(s_pnames.name[i], s_pnames.name[i + 1],
+                       STORAGE_NAME_LEN);
+            }
+            s_presets.count--;
+            s_pnames.name[s_presets.count][0] = '\0';
+            storage_save_presets(&s_presets);
+            storage_save_names(&s_pnames);
+            toast("PRESET DELETED");
+        }
+        ble_send_presets();
+        break;
+
+    default:
+        break;
+    }
+}
+
+/* ------------------------------------------------- BLE 시간 동기화 */
+
+static volatile bool s_ble_time_busy;
+static volatile uint32_t s_ble_time_ok_ms;
+static uint32_t s_ble_time_try_ms;
+
+static void ble_time_task(void *arg)
+{
+    (void)arg;
+    uint64_t epoch = 0;
+    if (net_bridge_request_time(&epoch, 6000) == 0) {
+        s_clock_base = (int64_t)epoch;
+        s_clock_ms0 = now_ms();
+        s_clock_set = true;
+        s_ble_time_ok_ms = now_ms();
+        clock_save_now();
+        clock_update();
+        ui_refresh_top();
+        ESP_LOGI(TAG, "time via BLE: %lld", (long long)epoch);
+    } else {
+        ESP_LOGW(TAG, "time via BLE failed");
+    }
+    s_ble_time_busy = false;
+    vTaskDelete(NULL);
+}
+
+static void ble_time_poll(uint32_t now)
+{
+    if (ble_get_state() != 2 || s_ble_time_busy) {
+        return;
+    }
+    bool due = !s_clock_set ||
+               (uint32_t)(now - s_ble_time_ok_ms) > (6u * 3600u * 1000u);
+    if (!due) {
+        return;
+    }
+    if (s_ble_time_try_ms != 0 && (uint32_t)(now - s_ble_time_try_ms) < 3000u) {
+        return;
+    }
+    s_ble_time_try_ms = now;
+    s_ble_time_busy = true;
+    if (xTaskCreate(ble_time_task, "bletime", 4096, NULL, 3, NULL) != pdPASS) {
+        s_ble_time_busy = false;
+    }
+}
+
 void app_main(void)
 {
     ESP_ERROR_CHECK(board_power_init());
@@ -650,6 +1067,8 @@ void app_main(void)
     display_flush();
     mod_runtime_init();
 
+    ble_init();
+
 #ifdef CONFIG_ESP_TASK_WDT
     esp_task_wdt_add(NULL);
 #endif
@@ -664,6 +1083,47 @@ void app_main(void)
 #endif
         on_encoder(encoder_get_delta());
         button_poll(now);
+        ble_poll();
+        {
+            /* BLE 연결 순간 자동 시간 동기화 */
+            static int s_prev_ble_state;
+            int bs = ble_get_state();
+            if (bs == 2 && s_prev_ble_state != 2) {
+                s_ble_time_ok_ms = 0;
+                s_ble_time_try_ms = 0;
+            }
+            s_prev_ble_state = bs;
+        }
+        ble_time_poll(now);
+        {
+            int c, arg;
+            while ((c = ble_take_cmd(&arg)) >= 0) {
+                ble_apply_cmd(c, arg);
+            }
+            if (ble_get_state() == 2 && !net_bridge_busy()) {
+                static char last[96];
+                static char last_stn[72];
+                static uint32_t s_ble_status_ms;
+                char cur[96];
+                ble_build_status(cur, sizeof(cur));
+                bool changed = strcmp(cur, last) != 0;
+                if ((changed && (now - s_ble_status_ms) >= 250) ||
+                    (now - s_ble_status_ms) >= 1000) {
+                    s_ble_status_ms = now;
+                    strcpy(last, cur);
+                    ble_notify(cur, strlen(cur));
+
+                    char stn[72];
+                    ble_station_text(stn, sizeof(stn));
+                    if (strcmp(stn, last_stn) != 0) {
+                        strcpy(last_stn, stn);
+                        char msg[80];
+                        snprintf(msg, sizeof(msg), "SI,%s", stn);
+                        ble_notify(msg, strlen(msg));
+                    }
+                }
+            }
+        }
         tune_commit(now);
         if (s_tune_save_pending &&
             (now - s_tune_save_ms) >= 5000u) {
@@ -783,6 +1243,9 @@ void app_main(void)
         if ((now - s_eibi_ms) > 1000) {
             s_eibi_ms = now;
             eibi_refresh();
+            if (s_hmi == HMI_EIBI_VIEW) {
+                ui_draw_eibi_clock();
+            }
         }
         {
             static uint32_t st_ms;
@@ -866,6 +1329,9 @@ void app_main(void)
             page_radio();
         } else if (s_hmi == HMI_SET && (int32_t)(now - s_nav_ms) > MENU_IDLE_MS) {
             page_radio();
+        } else if (s_hmi == HMI_MULTIMEDIA &&
+                   (int32_t)(now - s_nav_ms) > MENU_IDLE_MS) {
+            page_menu();
         } else if ((s_hmi == HMI_FAV || s_hmi == HMI_ATS_LIST) &&
                    (int32_t)(now - s_nav_ms) > LIST_IDLE_MS) {
             list_cancel();
@@ -907,6 +1373,8 @@ void app_main(void)
                 ats_side_draw();
             } else if (s_hmi == HMI_HOME) {
                 ui_draw_home(&s_ui, s_home_sel, g_apps, APP_COUNT);
+            } else if (s_hmi == HMI_MULTIMEDIA) {
+                ui_draw_multimedia(&s_ui, s_mm_cursor, g_mm_apps, MM_APP_COUNT);
             } else if (s_hmi == HMI_CLOCK) {
                 ui_draw_clock(&s_ui);
             } else if (s_hmi == HMI_VOL) {

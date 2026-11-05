@@ -53,6 +53,7 @@
 #include "ui_runtime.h"
 #include "decode.h"
 #include "weather.h"
+#include "eibi.h"
 #include "hmi.h"
 
 void page_radio(void)
@@ -176,6 +177,9 @@ void page_restore(void)
     case HMI_HOME:
         ui_draw_home(&s_ui, s_home_sel, g_apps, APP_COUNT);
         break;
+    case HMI_MULTIMEDIA:
+        ui_draw_multimedia(&s_ui, s_mm_cursor, g_mm_apps, MM_APP_COUNT);
+        break;
     case HMI_CLOCK:
         ui_draw_clock(&s_ui);
         break;
@@ -207,8 +211,11 @@ void page_restore(void)
     toast_redraw();
 }
 
+bool s_app_from_mm;
+
 void enter_home(void)
 {
+    s_app_from_mm = false;
     power_radio_off();
     s_hmi = HMI_HOME;
     s_home_sel = 0;
@@ -217,8 +224,20 @@ void enter_home(void)
     ui_draw_home(&s_ui, s_home_sel, g_apps, APP_COUNT);
 }
 
+/* 앱에서 뒤로: MORE에서 실행했으면 MORE로, 아니면 APPS로 */
+void app_back(void)
+{
+    if (s_app_from_mm) {
+        s_app_from_mm = false;
+        open_multimedia();
+    } else {
+        enter_home();
+    }
+}
+
 void launch_app(int idx)
 {
+    s_app_from_mm = false;
     if (idx < 0 || idx >= APP_COUNT) {
         enter_home();
         return;
@@ -250,6 +269,37 @@ void app_open_clock(void)
 void app_open_weather(void)
 {
     weather_open();
+}
+
+void app_open_decode(void)
+{
+    decode_start();
+    s_hmi = HMI_DECODE;
+    s_nav_ms = now_ms();
+    s_toast[0] = '\0';
+    ui_decode_refresh();
+}
+
+void open_multimedia(void)
+{
+    s_hmi = HMI_MULTIMEDIA;
+    s_mm_cursor = 0;
+    s_nav_ms = now_ms();
+    s_toast[0] = '\0';
+    ui_draw_multimedia(&s_ui, s_mm_cursor, g_mm_apps, MM_APP_COUNT);
+}
+
+void launch_mm_app(int idx)
+{
+    if (idx < 0 || idx >= MM_APP_COUNT) {
+        page_menu();
+        return;
+    }
+    /* 라디오 음소거/정지 없이 현재 상태 그대로 실행 */
+    s_app_from_mm = true;
+    if (g_mm_apps[idx].launch) {
+        g_mm_apps[idx].launch();
+    }
 }
 
 void open_volume(bool from_menu)
@@ -301,6 +351,9 @@ void ui_refresh_top(void)
         break;
     case HMI_HOME:
         ui_draw_home(&s_ui, s_home_sel, g_apps, APP_COUNT);
+        break;
+    case HMI_MULTIMEDIA:
+        ui_draw_multimedia(&s_ui, s_mm_cursor, g_mm_apps, MM_APP_COUNT);
         break;
     case HMI_CLOCK:
         ui_draw_clock(&s_ui);

@@ -55,7 +55,7 @@ enum {
     /* 모드 슬롯 (NEWPROJECT 규칙이 연결되는 UI 요소) */
     RM_MOD_A, RM_MOD_B, RM_MOD_C, RM_MOD_D,
     RM_MOD_E, RM_MOD_F, RM_MOD_G, RM_MOD_H,
-    RM_SETTINGS, RM_COUNT
+    RM_SETTINGS, RM_MULTIMEDIA, RM_COUNT
 };
 
 enum {
@@ -67,7 +67,7 @@ enum {
     /* 시계 */
     ST_TIME, ST_UTC,
     /* 시스템 */
-    ST_BATT, ST_BATT_CAL, ST_CPU, ST_WIFI,
+    ST_BATT, ST_BATT_CAL, ST_CPU, ST_WIFI, ST_BLUETOOTH, ST_BLE_RST,
     /* 데이터 */
     ST_EIBI, ST_QUICKSET,
     /* 진단 (비영구) */
@@ -93,7 +93,9 @@ typedef enum {
     HMI_WIFIAPP, HMI_SCANNING, HMI_WIFISCAN,
     HMI_KEYPAD, HMI_TIMESET, HMI_FAV, HMI_ATS_LIST, HMI_EIBI,
     HMI_EIBI_DL, HMI_EIBI_CONFIRM, HMI_EIBI_VIEW, HMI_SPLASH, HMI_ABOUT,
-    HMI_HOME, HMI_CLOCK, HMI_WEATHER, HMI_SCAN, HMI_QUICK, HMI_QUICKCFG
+    HMI_BLE_RST_CONFIRM,
+    HMI_HOME, HMI_CLOCK, HMI_WEATHER, HMI_SCAN, HMI_QUICK, HMI_QUICKCFG,
+    HMI_MULTIMEDIA
 } hmi_t;
 
 /* 퀵 메뉴 동작 */
@@ -161,6 +163,8 @@ extern uint8_t s_bw[3];
 extern int32_t s_bfo;
 extern uint8_t s_brightness;
 extern bool    s_power_save;
+extern bool    s_ble_on;
+extern int     s_ble_state;
 extern bool    s_rds_on;
 extern bool    s_stereo_force;
 extern bool    s_deemph_75;
@@ -285,6 +289,7 @@ extern bool     s_dirty;
 extern uint32_t s_vol_ms;
 extern bool     s_vol_from_menu;
 extern int      s_home_sel;
+extern int      s_mm_cursor;
 extern char     s_weather_location[48];
 extern uint8_t  s_weather_mode;
 extern char     s_toast[40];
@@ -405,6 +410,7 @@ esp_err_t wifi_sta_connect(void);
 esp_err_t wifi_start_apsta(void);
 esp_err_t wifi_setup_connect(const char *ssid, const char *pass);
 void wifi_scan_start(void);
+void wifi_scan_cancel(void);
 void open_splash_app(void);
 void open_splash_keypad(int welcome);
 void open_quick_cfg(void);
@@ -416,6 +422,7 @@ esp_err_t radio_apply(void);
 void apply_step_snap(void);
 void set_band(int idx);
 bool seek_start(bool up);
+void remote_tune_step(int steps);
 esp_err_t seek_tune(uint32_t freq);
 void seek_finish(bool found);
 void seek_cancel(void);
@@ -450,9 +457,11 @@ void fmt_freq_short(uint32_t hz, int mode, char *buf, size_t n);
 void rmenu_build(void);
 void settings_build(void);
 void opt_label(int i, const char *text);
-int opt_sel(int page, int item);
-void options_open(int page, int item);
+int opt_sel(int page, int item);void options_open(int page, int item);
 void opt_apply(int page, int item, int idx);
+void open_ble_rst_confirm(void);
+void ble_rst_apply(void);
+extern bool s_ble_rst_yes;
 void page_radio(void);
 void page_menu(void);
 void page_set(void);

@@ -224,41 +224,52 @@ void draw_status_right(const ui_state_t *s, int right)
         cursor = tx - 6;
     }
 
+    /* Wi-Fi: BLE보다 오른쪽에 배치 */
     if (s->wifi_state == 1) {
         int tw = display_text_width("ap", DISPLAY_FONT_TINY);
         display_draw_text((int16_t)(cursor - tw), 6, "ap", DISPLAY_FONT_TINY,
                           UI_WARN, UI_BG, DISPLAY_DATUM_TL);
-        return;
+        cursor -= tw + 4;
+    } else if (s_sta_connected && s->wifi_state == 2) {
+        uint16_t wc;
+        if (s->wifi_state == 0) {
+            wc = UI_MUTED;
+        } else if (s->wifi_state == 2) {
+            wc = UI_ACC_HI;
+        } else {
+            wc = UI_GOLD;
+        }
+        int bars = 0;
+        if (s->wifi_state == 1) {
+            bars = 4;
+        } else if (s->wifi_state == 2) {
+            int r = s->wifi_rssi;
+            bars = (r >= -55) ? 4 : (r >= -65) ? 3 : (r >= -75) ? 2 : 1;
+        }
+        const char *lbl = (s->wifi_state == 0) ? NULL
+                        : (s->wifi_state == 1) ? "ap" : "sta";
+        int lw = lbl ? display_text_width(lbl, DISPLAY_FONT_TINY) : 0;
+        int gx = cursor - (12 + (lbl ? 3 + lw : 0));
+        if (gx < 0) {
+            gx = 0;
+        }
+        wifi_icon(gx, 5, wc, bars);
+        if (lbl) {
+            display_draw_text((int16_t)(gx + 15), 6, lbl, DISPLAY_FONT_TINY,
+                              UI_MUTED, UI_BG, DISPLAY_DATUM_TL);
+        }
+        cursor = gx - 6;
     }
-    if (!s_sta_connected || s->wifi_state != 2) {
-        return;
-    }
-    uint16_t wc;
-    if (s->wifi_state == 0) {
-        wc = UI_MUTED;
-    } else if (s->wifi_state == 2) {
-        wc = UI_ACC_HI;
-    } else {
-        wc = UI_GOLD;
-    }
-    int bars = 0;
-    if (s->wifi_state == 1) {
-        bars = 4;
-    } else if (s->wifi_state == 2) {
-        int r = s->wifi_rssi;
-        bars = (r >= -55) ? 4 : (r >= -65) ? 3 : (r >= -75) ? 2 : 1;
-    }
-    const char *lbl = (s->wifi_state == 0) ? NULL
-                    : (s->wifi_state == 1) ? "ap" : "sta";
-    int lw = lbl ? display_text_width(lbl, DISPLAY_FONT_TINY) : 0;
-    int gx = cursor - (12 + (lbl ? 3 + lw : 0));
-    if (gx < 0) {
-        gx = 0;
-    }
-    wifi_icon(gx, 5, wc, bars);
-    if (lbl) {
-        display_draw_text((int16_t)(gx + 15), 6, lbl, DISPLAY_FONT_TINY,
-                          UI_MUTED, UI_BG, DISPLAY_DATUM_TL);
+
+    /* BLE: 끊김=빨강, 연결=초록 */
+    if (s_ble_on) {
+        uint16_t bc = (s_ble_state == 2) ? UI_OK : UI_RED;
+        int tw = display_text_width("BLE", DISPLAY_FONT_TINY);
+        int bx = cursor - tw;
+        if (bx >= 0) {
+            display_draw_text((int16_t)bx, 6, "BLE", DISPLAY_FONT_TINY,
+                              bc, UI_BG, DISPLAY_DATUM_TL);
+        }
     }
 }
 

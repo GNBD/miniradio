@@ -76,6 +76,62 @@ void ui_draw_home(const ui_state_t *s, int cursor, const ui_app_t *apps,
                       DISPLAY_FONT_TINY, UI_MUTED, UI_BG, DISPLAY_DATUM_TC);
 }
 
+/* MULTIMEDIA: 안드로이드 스타일 가로 타일 그리드 (2x2) */
+void ui_draw_multimedia(const ui_state_t *s, int cursor, const ui_app_t *apps,
+                        int count)
+{
+    display_fill_screen(UI_BG);
+
+    display_fill_round_rect(8, 7, 3, 12, 1, UI_ACC);
+    display_draw_text(16, 6, "MORE", DISPLAY_FONT_SMALL, UI_FG, UI_BG,
+                      DISPLAY_DATUM_TL);
+    if (s->clock[0]) {
+        display_draw_text(UI_W / 2, 6, s->clock, DISPLAY_FONT_SMALL, UI_ACC_HI,
+                          UI_BG, DISPLAY_DATUM_TC);
+    }
+    draw_status_right(s, UI_W);
+    display_fill_rect(0, 26, UI_W, 1, UI_LINE);
+
+    const int cols = 2;
+    const int tw = 146, th = 58, gx = 8, gy = 6, x0 = 10, y0 = 32;
+    const int max_show = 4;
+
+    for (int i = 0; i < count && i < max_show; ++i) {
+        int x = x0 + (i % cols) * (tw + gx);
+        int y = y0 + (i / cols) * (th + gy);
+        bool sel = (i == cursor);
+
+        panel(x, y, tw, th, 10, sel ? UI_HSEL : UI_PANEL,
+              sel ? UI_ACC : UI_LINE);
+
+        /* 좌측 아이콘 박스 */
+        const int isz = 40;
+        const int ix = x + 9, iy = y + (th - isz) / 2;
+        display_fill_round_rect(ix, iy, isz, isz, 9,
+                                sel ? UI_ACC : UI_TRACK);
+        const char *g = apps[i].glyph;
+        display_font_t gf = (display_font_t)apps[i].glyph_font;
+        int gw = display_text_width(g, gf);
+        int gh = display_font_height(gf);
+        display_draw_text((int16_t)(ix + isz / 2 - gw / 2),
+                          (int16_t)(iy + isz / 2 - gh / 2), g, gf,
+                          sel ? UI_BG : UI_ACC_HI, sel ? UI_ACC : UI_TRACK,
+                          DISPLAY_DATUM_TL);
+
+        /* 우측 라벨 */
+        char name[24];
+        fit_text(name, sizeof(name), apps[i].name, DISPLAY_FONT_SMALL,
+                 tw - 76);
+        display_draw_text(ix + isz + 18, y + th / 2, name,
+                          DISPLAY_FONT_SMALL, UI_FG,
+                          sel ? UI_HSEL : UI_PANEL, DISPLAY_DATUM_ML);
+    }
+
+    display_draw_text(UI_W / 2, 160,
+                      "turn: select   press: open   hold: back",
+                      DISPLAY_FONT_TINY, UI_MUTED, UI_BG, DISPLAY_DATUM_TC);
+}
+
 void ui_draw_setup_welcome(const char *name, const char *version,
                            int step, int total, int selected)
 {
@@ -229,50 +285,65 @@ void ui_draw_weather(const ui_state_t *s, int state, int page,
     draw_status_right(s, UI_W);
     display_fill_rect(0, 26, UI_W, 1, UI_LINE);
 
+    /* 도시 라벨: 앞에 작은 점 액센트 */
     if (city && city[0]) {
         char citybuf[40];
-        fit_text(citybuf, sizeof(citybuf), city, DISPLAY_FONT_TINY, 220);
-        display_draw_text(UI_W / 2, 31, citybuf, DISPLAY_FONT_TINY, UI_ACC_HI,
-                          UI_BG, DISPLAY_DATUM_TC);
+        fit_text(citybuf, sizeof(citybuf), city, DISPLAY_FONT_TINY, 210);
+        int cw = display_text_width(citybuf, DISPLAY_FONT_TINY);
+        int cx = UI_W / 2 - cw / 2;
+        display_fill_round_rect(cx - 12, 34, 5, 5, 2, UI_ACC);
+        display_draw_text(cx, 30, citybuf, DISPLAY_FONT_TINY, UI_ACC_HI,
+                          UI_BG, DISPLAY_DATUM_TL);
     }
 
+    /* 좌: 아이콘 카드 / 우: 수치 카드 */
+    panel(16, 42, 96, 92, 14, UI_PANEL, UI_LINE);
+    panel(120, 42, 184, 92, 14, UI_PANEL, UI_LINE);
+
     if (state == 0) {
-        display_draw_text(UI_W / 2, 84, "LOADING...", DISPLAY_FONT_SMALL,
-                          UI_ACC_HI, UI_BG, DISPLAY_DATUM_TC);
-    } else if (state == 2) {
-        weather_icon(128, 38, "cloud");
-        display_draw_text(UI_W / 2, 104, "WEATHER UNAVAILABLE",
-                          DISPLAY_FONT_SMALL, UI_WARN, UI_BG,
-                          DISPLAY_DATUM_TC);
-        display_draw_text(UI_W / 2, 124, "CHECK WI-FI", DISPLAY_FONT_TINY,
+        weather_icon(34, 62, "cloud");
+        display_draw_text(212, 58, "LOADING", DISPLAY_FONT_SMALL, UI_ACC_HI,
+                          UI_BG, DISPLAY_DATUM_TC);
+        display_draw_text(212, 88, "FETCHING DATA", DISPLAY_FONT_TINY,
                           UI_MUTED, UI_BG, DISPLAY_DATUM_TC);
+        for (int i = 0; i < 3; ++i) {
+            display_fill_round_rect(196 + i * 16, 112, 8, 8, 4,
+                                    i == 0 ? UI_ACC : UI_TRACK);
+        }
+    } else if (state == 2) {
+        weather_icon(34, 62, "cloud");
+        display_draw_text(212, 58, "NO DATA", DISPLAY_FONT_SMALL, UI_WARN,
+                          UI_BG, DISPLAY_DATUM_TC);
+        display_draw_text(212, 84, "WEATHER UNAVAILABLE", DISPLAY_FONT_TINY,
+                          UI_MUTED, UI_BG, DISPLAY_DATUM_TC);
+        display_draw_text(212, 104, "CHECK WI-FI", DISPLAY_FONT_TINY,
+                          UI_ACC_HI, UI_BG, DISPLAY_DATUM_TC);
     } else {
-        panel(20, 42, 92, 92, 18, UI_PANEL, UI_LINE);
-        weather_icon(36, 54, cond);
+        weather_icon(34, 62, cond);
 
         display_font_t tf = DISPLAY_FONT_HERO;
-        if (display_text_width(temp, tf) > 160) {
+        if (display_text_width(temp, tf) > 168) {
             tf = DISPLAY_FONT_TEXT48;
         }
-        display_draw_text(220, 42, temp, tf, UI_FG, UI_BG, DISPLAY_DATUM_TC);
+        display_draw_text(212, 48, temp, tf, UI_FG, UI_BG, DISPLAY_DATUM_TC);
 
         char line[40];
-        fit_text(line, sizeof(line), cond ? cond : "", DISPLAY_FONT_SMALL, 176);
-        display_draw_text(220, 94, line, DISPLAY_FONT_SMALL, UI_ACC_HI, UI_BG,
+        fit_text(line, sizeof(line), cond ? cond : "", DISPLAY_FONT_SMALL, 168);
+        display_draw_text(212, 96, line, DISPLAY_FONT_SMALL, UI_ACC_HI, UI_BG,
                           DISPLAY_DATUM_TC);
 
         snprintf(line, sizeof(line), "HUM %s   WIND %s",
                  humidity ? humidity : "-", wind ? wind : "-");
         char shown[48];
-        fit_text(shown, sizeof(shown), line, DISPLAY_FONT_TINY, 176);
-        display_draw_text(220, 118, shown, DISPLAY_FONT_TINY, UI_MUTED, UI_BG,
+        fit_text(shown, sizeof(shown), line, DISPLAY_FONT_TINY, 168);
+        display_draw_text(212, 118, shown, DISPLAY_FONT_TINY, UI_MUTED, UI_BG,
                           DISPLAY_DATUM_TC);
     }
 
     if (state == 1 && resolved && resolved[0]) {
         char shown[48];
         fit_text(shown, sizeof(shown), resolved, DISPLAY_FONT_TINY, 280);
-        display_draw_text(UI_W / 2, 136, shown, DISPLAY_FONT_TINY, UI_ACC_HI,
+        display_draw_text(UI_W / 2, 138, shown, DISPLAY_FONT_TINY, UI_ACC_HI,
                           UI_BG, DISPLAY_DATUM_TC);
     }
 

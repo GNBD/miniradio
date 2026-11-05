@@ -36,6 +36,8 @@ extern bool     s_digit_mode;
 extern int      s_digit_place;
 extern uint8_t  s_brightness;
 extern bool     s_power_save;
+extern bool     s_ble_on;
+extern int      s_ble_state;
 extern uint8_t  s_theme;
 extern volatile bool s_sta_connected;
 extern char     s_ap_pass[9];

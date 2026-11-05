@@ -177,6 +177,8 @@ void ui_draw_volume(const ui_state_t *s, bool show);
 void ui_draw_loading(const char *msg);
 void ui_draw_home(const ui_state_t *s, int cursor, const ui_app_t *apps,
                   int count);
+void ui_draw_multimedia(const ui_state_t *s, int cursor, const ui_app_t *apps,
+                        int count);
 void ui_draw_clock(const ui_state_t *s);
 void ui_draw_setup_welcome(const char *name, const char *version,
                            int step, int total, int selected);
@@ -217,6 +219,7 @@ void ui_draw_eibi_app(int cursor, bool ready, int entries);
 void ui_draw_splash_app(int cursor, bool on, int mode, const char *callsign,
                         const char *welcome);
 void ui_draw_eibi_view(int cursor, int top, int total);
+void ui_draw_eibi_clock(void);
 void ui_draw_eibi_dl(int entries, int bytes, int dots);
 void ui_draw_confirm(const char *title, const char *msg, bool yes);
 void ui_draw_quick(const ui_state_t *s, int cursor);

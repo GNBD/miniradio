@@ -34,6 +34,10 @@ extern int         s_kp_mode;
 extern const ui_app_t g_apps[3];
 #define APP_COUNT ((int)(sizeof(g_apps) / sizeof(g_apps[0])))
 
+/* ---- MORE 타일 앱 목록 (정의: main.c) ---- */
+extern const ui_app_t g_mm_apps[3];
+#define MM_APP_COUNT ((int)(sizeof(g_mm_apps) / sizeof(g_mm_apps[0])))
+
 /* ---- 공유 매크로 ---- */
 #define ST_BRIGHT_MENU   0x7E
 #define ST_BRIGHT_LEVEL  0x7F
@@ -48,8 +52,13 @@ void clock_save_now(void);
 void app_open_radio(void);
 void app_open_clock(void);
 void app_open_weather(void);
+void app_open_decode(void);
+void open_multimedia(void);
+void launch_mm_app(int idx);
 void close_volume(void);
 void enter_home(void);
+void app_back(void);
+extern bool s_app_from_mm;
 int  menu_id_at(int cursor);
 void open_volume(bool from_menu);
 void open_weather_keypad(void);

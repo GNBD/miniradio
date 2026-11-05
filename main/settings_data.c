@@ -20,6 +20,8 @@ static const menu_entry_t s_set[] = {
     { ST_BATT_CAL,   "BATT CAL",   1 },
     { ST_CPU,        "CPU",        1 },
     { ST_WIFI,       "WI-FI",      1 },
+    { ST_BLUETOOTH,  "BLUETOOTH",  1 },
+    { ST_BLE_RST,    "BLE RST",    0 },
     { ST_EIBI,       "EIBI",       1 },
     { ST_QUICKSET,   "QUICK SET",  1 },
     { ST_SIGDBG,     "SIG spd",    1 },

@@ -345,5 +345,14 @@ void wifi_scan_start(void)
     }
 }
 
+void wifi_scan_cancel(void)
+{
+    if (s_scan_running) {
+        esp_wifi_scan_stop();
+        s_scan_running = false;
+    }
+    s_scan_done = false;
+}
+
 /* ------------------------------------------------------------- Wi-Fi 스캔 */
 

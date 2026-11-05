@@ -31,6 +31,8 @@ uint8_t s_bw[3] = {1, 3, 1};   /* FM 110 kHz (AUTO not supported on FMRX 3.0) */
 int32_t s_bfo;
 uint8_t s_brightness = 100;
 bool    s_power_save;
+bool    s_ble_on = true;       /* BLE 광고 ON */
+int     s_ble_state;           /* 0=끊김, 1=연결중, 2=연결완료 */
 bool    s_rds_on = true;
 bool    s_stereo_force = false;
 bool    s_deemph_75 = true;   /* KR/US default 75 us (Europe/JP 50 us) */
@@ -159,6 +161,7 @@ bool s_dirty;
 uint32_t s_vol_ms;
 bool     s_vol_from_menu;
 int      s_home_sel;
+int      s_mm_cursor;
 char     s_weather_location[48];
 uint8_t  s_weather_mode;
 char     s_toast[40];

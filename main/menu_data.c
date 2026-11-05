@@ -26,6 +26,7 @@ static const menu_entry_t s_menu[] = {
     { RM_LINEFLT, "LINE FLT", 1 },
     { RM_SQUELCH, "SQUELCH", 1 },
     { RM_SETTINGS, "SETTINGS", 1 },
+    { RM_MULTIMEDIA, "MORE", 1 },
 };
 
 const menu_entry_t *g_menu_items = s_menu;

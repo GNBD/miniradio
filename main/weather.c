@@ -12,6 +12,7 @@
 #include "esp_log.h"
 #include "esp_http_client.h"
 #include "app.h"
+#include "net_bridge.h"
 #include "ui.h"
 #include "weather.h"
 
@@ -101,6 +102,25 @@ static void url_encode(const char *src, char *dst, size_t n)
     dst[o] = '\0';
 }
 
+typedef struct {
+    char *buf;
+    int size;
+    int len;
+} wx_acc_t;
+
+static void weather_bridge_cb(const uint8_t *data, int len, void *ctx)
+{
+    wx_acc_t *a = (wx_acc_t *)ctx;
+    int room = a->size - 1 - a->len;
+    if (len > room) {
+        len = room;
+    }
+    if (len > 0) {
+        memcpy(a->buf + a->len, data, len);
+        a->len += len;
+    }
+}
+
 static void weather_task(void *arg)
 {
     uint32_t gen = (uint32_t)(uintptr_t)arg;
@@ -120,39 +140,54 @@ static void weather_task(void *arg)
                  "http://wttr.in/%s?format=%%l|%%t|%%C|%%h|%%w", loc);
     }
 
-    esp_http_client_config_t cfg = {
-        .url = url,
-        .timeout_ms = 8000,
-        .buffer_size = 512,
-    };
-    esp_http_client_handle_t c = esp_http_client_init(&cfg);
-    esp_err_t err = c ? esp_http_client_open(c, 0) : ESP_FAIL;
-    if (err == ESP_OK) {
-        int hdr = esp_http_client_fetch_headers(c);
-        int status = esp_http_client_get_status_code(c);
-        int len = 0;
-        if (hdr >= 0 && status == 200) {
-            int n = 0;
-            while (len < (int)sizeof(buf) - 1 &&
-                   (n = esp_http_client_read(c, buf + len,
-                                             sizeof(buf) - 1 - len)) > 0) {
-                len += n;
-            }
-            if (n < 0) {
-                len = -1;
-            }
-        }
-        ESP_LOGI(TAG, "HTTP %d len=%d", status, len);
-        if (len > 0 && gen == s_wx_gen) {
+    int len = 0;
+    if (net_bridge_available()) {
+        wx_acc_t acc = { buf, (int)sizeof(buf), 0 };
+        int got = net_bridge_fetch(url, weather_bridge_cb, &acc, 12000);
+        if (got > 0) {
+            len = acc.len;
             buf[len] = '\0';
-            weather_parse(buf);
+            if (gen == s_wx_gen) {
+                weather_parse(buf);
+            }
         }
-        esp_http_client_close(c);
+        ESP_LOGI(TAG, "bridge %d len=%d", got, len);
+    } else if (s_sta_connected && s_wifi_mode == 2) {
+        esp_http_client_config_t cfg = {
+            .url = url,
+            .timeout_ms = 8000,
+            .buffer_size = 512,
+        };
+        esp_http_client_handle_t c = esp_http_client_init(&cfg);
+        esp_err_t err = c ? esp_http_client_open(c, 0) : ESP_FAIL;
+        if (err == ESP_OK) {
+            int hdr = esp_http_client_fetch_headers(c);
+            int status = esp_http_client_get_status_code(c);
+            if (hdr >= 0 && status == 200) {
+                int n = 0;
+                while (len < (int)sizeof(buf) - 1 &&
+                       (n = esp_http_client_read(c, buf + len,
+                                                 sizeof(buf) - 1 - len)) > 0) {
+                    len += n;
+                }
+                if (n < 0) {
+                    len = -1;
+                }
+            }
+            ESP_LOGI(TAG, "HTTP %d len=%d", status, len);
+            if (len > 0 && gen == s_wx_gen) {
+                buf[len] = '\0';
+                weather_parse(buf);
+            }
+            esp_http_client_close(c);
+        } else {
+            ESP_LOGW(TAG, "request failed (%s)", esp_err_to_name(err));
+        }
+        if (c) {
+            esp_http_client_cleanup(c);
+        }
     } else {
-        ESP_LOGW(TAG, "request failed (%s)", esp_err_to_name(err));
-    }
-    if (c) {
-        esp_http_client_cleanup(c);
+        ESP_LOGW(TAG, "no network path (no Wi-Fi, no BLE bridge)");
     }
     if (gen == s_wx_gen) {
         if (s_wx_state != 1) {

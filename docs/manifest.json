@@ -1,6 +1,6 @@
 {
   "name": "GNBD miniradio",
-  "version": "1.2.28",
+  "version": "1.2.33",
   "new_install_prompt_erase": true,
   "builds": [
     {
@@ -19,7 +19,7 @@
           "offset": 57344
         },
         {
-          "path": "download/GNBD_miniradio_1.2.28_app.bin",
+          "path": "download/GNBD_miniradio_1.2.33_app.bin",
           "offset": 65536
         },
         {

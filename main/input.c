@@ -110,6 +110,29 @@ void tune_commit(uint32_t now)
     s_tune_save_ms = now;
 }
 
+/* BLE 원격 제어용: 스텝 단위 즉시 튜닝 (엔코더 코얼레싱 없이) */
+void remote_tune_step(int steps)
+{
+    if (steps == 0 || !s_radio_ok || s_seeking || s_ats == ATS_SEEK) {
+        return;
+    }
+    uint32_t now = now_ms();
+    uint32_t step = eff_step_hz();
+    uint32_t base = band_snap_freq(s_ui.band_idx, s_ui.freq_hz, step);
+    s_ui.freq_hz = band_step_freq(s_ui.band_idx, base, steps, step);
+    if (radio_tune() != ESP_OK) {
+        ESP_LOGW(TAG, "remote tune failed");
+    }
+    s_freq_dirty = true;
+    s_ui.preset_slot = preset_index_for_freq(s_ui.freq_hz, s_ui.band_idx);
+    s_ui.ats_slot = ats_index_for_freq(s_ui.freq_hz, s_ui.band_idx);
+    s_tune_save_pending = true;
+    s_tune_save_ms = now;
+    if (s_hmi == HMI_TUNE) {
+        ui_draw_radio_freq(&s_ui);
+    }
+}
+
 void on_encoder(int d)
 {
     if (d == 0) {
@@ -190,6 +213,11 @@ void on_encoder(int d)
         s_nav_ms = now;
         s_home_sel = wrap(s_home_sel + d, APP_COUNT);
         ui_draw_home(&s_ui, s_home_sel, g_apps, APP_COUNT);
+        break;
+    case HMI_MULTIMEDIA:
+        s_nav_ms = now;
+        s_mm_cursor = wrap(s_mm_cursor + d, MM_APP_COUNT);
+        ui_draw_multimedia(&s_ui, s_mm_cursor, g_mm_apps, MM_APP_COUNT);
         break;
     case HMI_CLOCK:
     case HMI_WEATHER:
@@ -344,6 +372,13 @@ void on_encoder(int d)
         ui_draw_confirm("EIBI DOWNLOAD", "Download schedule now?",
                         s_eibi_yes);
         break;
+    case HMI_BLE_RST_CONFIRM:
+        s_nav_ms = now;
+        s_ble_rst_yes = !s_ble_rst_yes;
+        ui_draw_confirm("BLE RESET",
+                        "Erase paired devices? Cannot be undone.",
+                        s_ble_rst_yes);
+        break;
     case HMI_EIBI_DL:
         break;
     }
@@ -457,6 +492,14 @@ void on_button(bool long_press)
         }
         return;
     }
+    if (s_hmi == HMI_BLE_RST_CONFIRM) {
+        if (!long_press && s_ble_rst_yes) {
+            ble_rst_apply();
+        } else {
+            page_set();
+        }
+        return;
+    }
     if (s_hmi == HMI_ABOUT) {
         page_set();
         return;
@@ -485,6 +528,13 @@ void on_button(bool long_press)
         if (!long_press) {
             /* 스캔 중에는 클릭으로 취소 */
             s_scan_running = false;
+            open_wifi_app();
+        }
+        return;
+    }
+    if (s_hmi == HMI_SCANNING) {
+        if (long_press) {
+            wifi_scan_cancel();
             open_wifi_app();
         }
         return;
@@ -527,9 +577,8 @@ void on_button(bool long_press)
     if (s_hmi == HMI_DECODE) {
         if (long_press) {
             decode_stop();
-            s_hmi = HMI_TUNE;
             s_nav_ms = now;
-            page_radio();
+            app_back();
         } else {
             decode_cycle_mode();
             ui_decode_refresh();
@@ -580,16 +629,19 @@ void on_button(bool long_press)
     case HMI_HOME:
         launch_app(long_press ? app_find("radio") : s_home_sel);
         break;
-    case HMI_CLOCK:
+    case HMI_MULTIMEDIA:
         if (long_press) {
-            launch_app(app_find("radio"));
+            page_menu();
         } else {
-            enter_home();
+            launch_mm_app(s_mm_cursor);
         }
+        break;
+    case HMI_CLOCK:
+        app_back();
         break;
     case HMI_WEATHER:
         if (long_press) {
-            enter_home();
+            app_back();
         } else {
             weather_set_mode(1);
             mark_change();
@@ -675,6 +727,8 @@ void on_button(bool long_press)
     case HMI_EIBI_DL:
         break;
     case HMI_EIBI_CONFIRM:
+        break;
+    case HMI_BLE_RST_CONFIRM:
         break;
     case HMI_SPLASH:
         break;

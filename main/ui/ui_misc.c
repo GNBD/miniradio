@@ -19,6 +19,8 @@
 #include "eibi.h"
 #include "decode.h"
 #include "ui_int.h"
+#include "app.h"
+#include "hmi.h"
 /* ------------------------------------------------------------- 시간 설정 */
 
 void ui_draw_time_set(int year, int month, int day, int hour, int minute,
@@ -137,9 +139,47 @@ void ui_draw_eibi_app(int cursor, bool ready, int entries)
 #define EIBI_VIEW_ROWS 5
 #define EIBI_VIEW_RH   24
 
+static char s_eb_ub[16];
+static char s_eb_lb[16];
+
+/* 하단 시계: UTC / LOCAL (분이 바뀔 때만 다시 그림) */
+void ui_draw_eibi_clock(void)
+{
+    char ub[16];
+    char lb[16];
+    if (s_clock_set) {
+        int64_t utc = clock_utc_now();
+        int64_t rem = utc % 86400;
+        if (rem < 0) {
+            rem += 86400;
+        }
+        snprintf(ub, sizeof(ub), "UTC %02d:%02d",
+                 (int)(rem / 3600), (int)((rem / 60) % 60));
+        int y, mo, d, h, mi;
+        local_datetime(&y, &mo, &d, &h, &mi);
+        snprintf(lb, sizeof(lb), "LOCAL %02d:%02d", h, mi);
+    } else {
+        snprintf(ub, sizeof(ub), "UTC --:--");
+        snprintf(lb, sizeof(lb), "LOCAL --:--");
+    }
+    if (strcmp(ub, s_eb_ub) == 0 && strcmp(lb, s_eb_lb) == 0) {
+        return;
+    }
+    memcpy(s_eb_ub, ub, sizeof(s_eb_ub));
+    memcpy(s_eb_lb, lb, sizeof(s_eb_lb));
+
+    display_fill_rect(0, 146, UI_W, 1, UI_LINE);
+    display_draw_text(8, 150, lb, DISPLAY_FONT_TINY, UI_ACC_HI, UI_BG,
+                      DISPLAY_DATUM_TL);
+    display_draw_text(UI_W - 8, 150, ub, DISPLAY_FONT_TINY, UI_MUTED, UI_BG,
+                      DISPLAY_DATUM_TR);
+}
+
 void ui_draw_eibi_view(int cursor, int top, int total)
 {
     display_fill_screen(UI_BG);
+    s_eb_ub[0] = '\0';
+    s_eb_lb[0] = '\0';
 
     display_fill_round_rect(8, 5, 3, 12, 1, UI_ACC);
     display_draw_text(16, 7, "EIBI SCHEDULE", DISPLAY_FONT_TINY, UI_FG, UI_BG,
@@ -195,6 +235,8 @@ void ui_draw_eibi_view(int cursor, int top, int total)
         display_fill_rect(UI_W - 3, (int16_t)thumb_y, 2, (uint16_t)thumb_h,
                           UI_MUTED);
     }
+
+    ui_draw_eibi_clock();
 
     display_draw_text(8, UI_H - 8, "turn: page   press: back",
                       DISPLAY_FONT_TINY, UI_MUTED, UI_BG, DISPLAY_DATUM_TL);

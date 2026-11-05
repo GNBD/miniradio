@@ -18,6 +18,7 @@
 #include "esp_crt_bundle.h"
 #include "esp_littlefs.h"
 #include "app.h"
+#include "net_bridge.h"
 
 static const char *TAG = "eibi";
 
@@ -268,6 +269,42 @@ bool eibi_parse_line(char *line, eibi_rec_t *out)
     return true;
 }
 
+typedef struct {
+    FILE *f;
+    char line[220];
+    int ll;
+    int recs;
+} eibi_ctx_t;
+
+static void eibi_feed(eibi_ctx_t *e, const char *buf, int n)
+{
+    for (int i = 0; i < n; ++i) {
+        char ch = buf[i];
+        if (ch == '\r') {
+            ch = ' ';
+        }
+        if (ch == '\n') {
+            e->line[e->ll] = '\0';
+            if (e->ll > 0 && isdigit((unsigned char)e->line[0])) {
+                eibi_rec_t rec;
+                if (eibi_parse_line(e->line, &rec)) {
+                    fwrite(&rec, sizeof(rec), 1, e->f);
+                    ++e->recs;
+                    s_eibi_entries = e->recs;
+                }
+            }
+            e->ll = 0;
+        } else if (e->ll < (int)sizeof(e->line) - 1) {
+            e->line[e->ll++] = ch;
+        }
+    }
+}
+
+static void eibi_bridge_cb(const uint8_t *data, int len, void *ctx)
+{
+    eibi_feed((eibi_ctx_t *)ctx, (const char *)data, len);
+}
+
 void eibi_task(void *arg)
 {
     (void)arg;
@@ -299,6 +336,21 @@ void eibi_task(void *arg)
         return;
     }
 
+    int recs = 0;
+    int expected = -1;
+    bool ok = false;
+    eibi_ctx_t ectx = { .f = f, .ll = 0, .recs = 0 };
+
+    if (net_bridge_available()) {
+        int got = net_bridge_fetch("http://www.eibispace.de/dx/eibi.txt",
+                                   eibi_bridge_cb, &ectx, 40000);
+        if (got > 0) {
+            s_eibi_bytes = got;
+            recs = ectx.recs;
+            ok = recs > 0;
+        }
+        ESP_LOGI(TAG, "EiBi bridge len=%d entries=%d", got, recs);
+    } else {
     esp_http_client_config_t cfg = {
         .url = "http://www.eibispace.de/dx/eibi.txt",
         .timeout_ms = 20000,
@@ -306,9 +358,7 @@ void eibi_task(void *arg)
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t c = esp_http_client_init(&cfg);
-    bool ok = (c && esp_http_client_open(c, 0) == ESP_OK);
-    int recs = 0;
-    int expected = -1;
+    ok = (c && esp_http_client_open(c, 0) == ESP_OK);
     if (ok) {
         esp_http_client_fetch_headers(c);
         int status = esp_http_client_get_status_code(c);
@@ -319,32 +369,12 @@ void eibi_task(void *arg)
             ok = false;
         } else {
         static char buf[2048];
-        char line[220];
-        int ll = 0;
         int n;
         while ((n = esp_http_client_read(c, buf, sizeof(buf))) > 0) {
             s_eibi_bytes += n;
-            for (int i = 0; i < n; ++i) {
-                char ch = buf[i];
-                if (ch == '\r') {
-                    ch = ' ';
-                }
-                if (ch == '\n') {
-                    line[ll] = '\0';
-                    if (ll > 0 && isdigit((unsigned char)line[0])) {
-                        eibi_rec_t rec;
-                        if (eibi_parse_line(line, &rec)) {
-                            fwrite(&rec, sizeof(rec), 1, f);
-                            ++recs;
-                            s_eibi_entries = recs;
-                        }
-                    }
-                    ll = 0;
-                } else if (ll < (int)sizeof(line) - 1) {
-                    line[ll++] = ch;
-                }
-            }
+            eibi_feed(&ectx, buf, n);
         }
+        recs = ectx.recs;
         if (n < 0 || (expected > 0 && s_eibi_bytes < expected)) {
             ok = false;
         }
@@ -353,6 +383,7 @@ void eibi_task(void *arg)
     if (c) {
         esp_http_client_close(c);
         esp_http_client_cleanup(c);
+    }
     }
     {
         long wpos = ftell(f);
@@ -392,7 +423,7 @@ void eibi_task(void *arg)
 
 void eibi_download_start(void)
 {
-    if (!s_sta_connected || s_wifi_mode != 2) {
+    if (!(s_sta_connected && s_wifi_mode == 2) && !net_bridge_available()) {
         toast("WI-FI FIRST");
         return;
     }

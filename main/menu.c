@@ -55,6 +55,7 @@
 #include "decode.h"
 #include "weather.h"
 #include "hmi.h"
+#include "ble.h"
 static bool s_opt_quick;
 static bool s_opt_force_radio;
 #define QUICK_ITEMS 4
@@ -236,6 +237,7 @@ void rmenu_build(void)
         snprintf(s_rbuf[RM_SQUELCH], sizeof(s_rbuf[RM_SQUELCH]), "OFF");
     }
     snprintf(s_rbuf[RM_SETTINGS], sizeof(s_rbuf[RM_SETTINGS]), ">");
+    snprintf(s_rbuf[RM_MULTIMEDIA], sizeof(s_rbuf[RM_MULTIMEDIA]), ">");
 
     if (band_is_ssb(s_ui.mode) && si4732_ssb_patch_size > 0) {
         snprintf(s_rbuf[RM_BFO], sizeof(s_rbuf[RM_BFO]), "%+ld", (long)s_bfo);
@@ -312,6 +314,8 @@ void settings_build(void)
     snprintf(s_sbuf[ST_WIFI], sizeof(s_sbuf[ST_WIFI]), "%s",
              (s_wifi_mode == 1) ? "AP" :
              (s_wifi_mode == 2) ? "STA" : "OFF");
+    snprintf(s_sbuf[ST_BLUETOOTH], sizeof(s_sbuf[ST_BLUETOOTH]), "%s",
+             s_ble_on ? "ON" : "OFF");
     {
         int yy, mo, dd, hh, mm;
         local_datetime(&yy, &mo, &dd, &hh, &mm);
@@ -459,6 +463,8 @@ int opt_sel(int page, int item)
         case ST_SIGVIEW: return s_sig_view;
         case ST_UTC:    return s_utc_min / 60 + 12;
         case ST_WIFI:   return (s_wifi_mode <= 2) ? s_wifi_mode : 0;
+        case ST_BLUETOOTH: return s_ble_on ? 0 : 1;
+        case ST_BLE_RST:   return 0;
         case ST_BATT:   return (s_batt_view <= 4) ? s_batt_view : 3;
         case ST_BATT_CAL: return s_batt_cal_mv;
         case ST_SCREEN: return s_screen_sec;
@@ -719,6 +725,16 @@ void options_open(int page, int item)
             s_opt.title = "WI-FI";
             live = false;
             break;
+        case ST_BLUETOOTH:
+            opt_label(n++, "ON");
+            opt_label(n++, "OFF");
+            s_opt.title = "BLUETOOTH";
+            break;
+        case ST_BLE_RST:
+            opt_label(n++, "RESET");
+            s_opt.title = "BLE RESET";
+            live = false;
+            break;
         case ST_BATT:
             opt_label(n++, "ICON");            opt_label(n++, "VOLTAGE");
             opt_label(n++, "PERCENT");
@@ -793,9 +809,26 @@ void options_open(int page, int item)
     ui_draw_options(&s_opt);
 }
 
-void opt_apply(int page, int item, int idx)
+bool s_ble_rst_yes;
+
+void open_ble_rst_confirm(void)
 {
-    int slot = mode_slot(s_ui.mode);
+    s_ble_rst_yes = false;
+    s_hmi = HMI_BLE_RST_CONFIRM;
+    s_nav_ms = now_ms();
+    ui_draw_confirm("BLE RESET",
+                    "Erase paired devices? Cannot be undone.", false);
+}
+
+void ble_rst_apply(void)
+{
+    ble_clear_bonds();
+    toast("BLE RESET DONE");
+    page_set();
+}
+
+void opt_apply(int page, int item, int idx)
+{    int slot = mode_slot(s_ui.mode);
 
     if (page == HMI_MENU) {
         switch (item) {
@@ -1032,6 +1065,16 @@ void opt_apply(int page, int item, int idx)
             }
             mark_change();
             break;
+        case ST_BLUETOOTH:
+            s_ble_on = (idx == 0);
+            ble_set_enabled(s_ble_on);
+            toast(s_ble_on ? "BLE ON" : "BLE OFF");
+            mark_change();
+            ui_refresh_top();
+            break;
+        case ST_BLE_RST:
+            open_ble_rst_confirm();
+            break;
         case ST_BATT:
             if (idx < 0) { idx = 0; }
             if (idx > 4) { idx = 4; }
@@ -1077,6 +1120,7 @@ bool menu_item_is_action(int item)
     }
     return (id == RM_BACK || id == RM_SEEK || id == RM_SCAN ||
             id == RM_FAV || id == RM_SETTINGS || id == RM_VOLUME ||
+            id == RM_MULTIMEDIA ||
             (id >= RM_MOD_A && id <= RM_MOD_H));
 }
 
@@ -1113,6 +1157,10 @@ void menu_action(int item)
         break;
     case RM_FAV:
         open_favorites();
+        break;
+    case RM_MULTIMEDIA:
+        /* MULTIMEDIA → 타일형 앱 목록 (WEATHER 등) */
+        open_multimedia();
         break;
     case RM_SCAN:
         spectrum_scan_start();
@@ -1264,6 +1312,11 @@ void options_close(bool apply)
     if (apply) {
         opt_apply(s_opt_page, s_opt_item,
                   s_opt.slider ? s_opt.value : s_opt.cursor);
+    }
+    if (apply && s_opt_page == HMI_SET && s_opt_item == ST_BLE_RST) {
+        /* opt_apply() already opened the confirmation modal; do not
+           overwrite it by restoring the settings page. */
+        return;
     }
     if (apply && s_opt_page == HMI_SET && s_opt_item == ST_BRIGHT_MENU &&
         s_opt.cursor == 0) {
