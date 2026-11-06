@@ -45,3 +45,4 @@ esptool.py --chip esp32s3 -p COM7 write_flash 0x10000 build/miniradio.bin
 
 서드파티 고지는 [licenses](licenses)와 각
 컴포넌트의 라이선스 파일을 따릅니다.
+Please let us know if any licenses are missing or incorrect.
